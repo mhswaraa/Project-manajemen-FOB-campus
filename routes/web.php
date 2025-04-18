@@ -7,6 +7,8 @@ use App\Http\Controllers\PenjahitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth
+;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +24,21 @@ Route::get('/', function () {
 });
 
 // (Optional) Dashboard umum, bisa dialihkan per-role nanti
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $role = Auth::user()->role;
+
+    return match ($role) {
+        'admin'    => view('dashboard.admin'),
+        'ceo'      => view('dashboard.ceo'),
+        'investor' => view('dashboard.investor'),
+        'penjahit' => view('dashboard.penjahit'),
+        default    => abort(403),
+    };
 })->middleware(['auth', 'verified'])->name('dashboard');
-
-
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])
