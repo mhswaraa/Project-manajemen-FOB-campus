@@ -5,6 +5,7 @@ use App\Http\Controllers\CeoController;
 use App\Http\Controllers\InvestorController;
 use App\Http\Controllers\PenjahitController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,6 +26,8 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])
          ->name('profile.edit');
@@ -39,6 +42,7 @@ require __DIR__.'/auth.php';
 // ───────────────────────────────────────────────────────────────
 // ✨ Tambahan untuk Routing per Role
 // ───────────────────────────────────────────────────────────────
+
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])
@@ -62,4 +66,14 @@ Route::middleware(['auth', 'role:penjahit'])->group(function () {
     Route::get('/penjahit', [PenjahitController::class, 'index'])
          ->name('penjahit.dashboard');
     // ... route–route Penjahit Borongan ...
+});
+
+// ───────────────────────────────────────────────────────────────
+// ✨ Tambahan untuk Pembatasan register
+// ───────────────────────────────────────────────────────────────
+
+Route::middleware(['auth','role:admin'])->group(function(){
+    Route::get('/register', [RegisteredUserController::class, 'create'])
+        ->name('register');        // hanya Admin yang bisa lihat form
+    Route::post('/register', [RegisteredUserController::class, 'store']);
 });
