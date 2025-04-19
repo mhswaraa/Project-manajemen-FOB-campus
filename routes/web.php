@@ -1,90 +1,45 @@
 <?php
 
-use App\Http\Controllers\AdminController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CeoController;
 use App\Http\Controllers\InvestorController;
 use App\Http\Controllers\PenjahitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Di sini kamu daftarkan route–route web.
-|
-*/
+// Welcome
+Route::get('/', fn() => view('welcome'));
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-// (Optional) Dashboard umum, bisa dialihkan per-role nanti
-// Route::get('/dashboard', function () {
-//     return view('dashboard');
-// })->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::get('/dashboard', function () {
-    $role = Auth::user()->role;
-
-    return match ($role) {
-        'admin'    => view('dashboard.admin'),
-        'ceo'      => view('dashboard.ceo'),
-        'investor' => view('dashboard.investor'),
-        'penjahit' => view('dashboard.penjahit'),
-        default    => abort(403),
-    };
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])
-         ->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])
-         ->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])
-         ->name('profile.destroy');
-});
-
+// Auth (login, password reset, email verif)
 require __DIR__.'/auth.php';
 
-// ───────────────────────────────────────────────────────────────
-// ✨ Tambahan untuk Routing per Role
-// ───────────────────────────────────────────────────────────────
-
-
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])
-         ->name('admin.dashboard');
-    // ... tambahkan route–route Admin lainnya di sini ...
+// Profile (semua user)
+Route::middleware('auth')->group(function(){
+    Route::get('/profile',[ProfileController::class,'edit'])->name('profile.edit');
+    // ...
 });
 
-Route::middleware(['auth', 'role:ceo'])->group(function () {
-    Route::get('/ceo', [CeoController::class, 'index'])
-         ->name('ceo.dashboard');
-    // ... route–route CEO ...
-});
+// Single entrypoint Dashboard
+Route::middleware(['auth','verified'])
+     ->get('/dashboard',[DashboardController::class,'index'])
+     ->name('dashboard');
 
-Route::middleware(['auth', 'role:investor'])->group(function () {
-    Route::get('/investor', [InvestorController::class, 'index'])
-         ->name('investor.dashboard');
-    // ... route–route Investor ...
-});
+// Halaman‐halaman per role
+Route::middleware(['auth','role:ceo'])
+     ->get('/ceo',[CeoController::class,'index'])
+     ->name('ceo.dashboard');
 
-Route::middleware(['auth', 'role:penjahit'])->group(function () {
-    Route::get('/penjahit', [PenjahitController::class, 'index'])
-         ->name('penjahit.dashboard');
-    // ... route–route Penjahit Borongan ...
-});
+Route::middleware(['auth','role:investor'])
+     ->get('/investor',[InvestorController::class,'index'])
+     ->name('investor.dashboard');
 
-// ───────────────────────────────────────────────────────────────
-// ✨ Tambahan untuk Pembatasan register
-// ───────────────────────────────────────────────────────────────
+Route::middleware(['auth','role:penjahit'])
+     ->get('/penjahit',[PenjahitController::class,'index'])
+     ->name('penjahit.dashboard');
 
+// Register hanya Admin
 Route::middleware(['auth','role:admin'])->group(function(){
-    Route::get('/register', [RegisteredUserController::class, 'create'])
-        ->name('register');        // hanya Admin yang bisa lihat form
-    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::get('/register',[RegisteredUserController::class,'create'])->name('register');
+    Route::post('/register',[RegisteredUserController::class,'store']);
 });
