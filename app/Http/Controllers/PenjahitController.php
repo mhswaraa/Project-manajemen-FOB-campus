@@ -10,7 +10,7 @@ class PenjahitController extends Controller
 {
     public function index()
     {
-        return view('dashboard.tailor'); // pastikan view ini ada: resources/views/dashboards/tailor.blade.php
+        return view('dashboard.penjahit'); // pastikan view ini ada: resources/views/dashboards/tailor.blade.php
     }
     public function create()
 {

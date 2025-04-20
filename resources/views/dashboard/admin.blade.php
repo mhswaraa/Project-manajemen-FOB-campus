@@ -32,12 +32,16 @@
                 </a>
 
                 {{-- Manajemen Penjahit --}}
-                @php $active = request()->routeIs('penjahits.*'); @endphp
-                <a href="#" class="flex items-center gap-3 py-2 px-3 rounded-lg transition
-                      {{ $active
+                @php $active = request()->routeIs('admin.penjahits.*'); @endphp
+                <a href="{{ route('admin.penjahits.index') }}" class="flex items-center gap-3 py-2 px-3 rounded-lg transition
+      {{ $active
     ? 'bg-indigo-200 text-indigo-800'
     : 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' }}">
-                    <!-- ikon -->
+                    <!-- contoh ikon jarum -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2l4 7-4 7-4-7 4-7z" />
+                    </svg>
                     Manajemen Penjahit
                 </a>
 
