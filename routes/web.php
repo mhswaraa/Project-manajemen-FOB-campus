@@ -30,13 +30,33 @@ Route::middleware(['auth','role:ceo'])
      ->get('/ceo',[CeoController::class,'index'])
      ->name('ceo.dashboard');
 
-Route::middleware(['auth','role:investor'])
-     ->get('/investor',[InvestorController::class,'index'])
-     ->name('investor.dashboard');
+// Investor
+Route::middleware(['auth','role:investor'])->group(function(){
+     // Dashboard investor
+     Route::get('/investor',[InvestorController::class,'index'])
+          ->name('investor.dashboard');
+ 
+     // Form Create Investor (pre‐fill name/email)
+     Route::get('/investors/create',[InvestorController::class,'create'])
+          ->name('investors.create');
+     // Store Investor ke tabel `investors`
+     Route::post('/investors',[InvestorController::class,'store'])
+          ->name('investors.store');
+ });
 
-Route::middleware(['auth','role:penjahit'])
-     ->get('/penjahit',[PenjahitController::class,'index'])
-     ->name('penjahit.dashboard');
+// Penjahit Borongan
+Route::middleware(['auth','role:penjahit'])->group(function(){
+     // Dashboard penjahit
+     Route::get('/penjahit',[PenjahitController::class,'index'])
+          ->name('penjahit.dashboard');
+ 
+     // Form Create Penjahit (pre‐fill name/email)
+     Route::get('/penjahits/create',[PenjahitController::class,'create'])
+          ->name('penjahits.create');
+     // Store Penjahit ke tabel `penjahits`
+     Route::post('/penjahits',[PenjahitController::class,'store'])
+          ->name('penjahits.store');
+ });
 
 // Register hanya Admin
 Route::middleware(['auth','role:admin'])->group(function(){

@@ -49,4 +49,13 @@ class User extends Authenticatable
     {
     return $this->role === $role;
     }
+
+    public function investor()
+{
+    return $this->hasOne(\App\Models\Investor::class,'user_id');
+}
+public function tailor()
+{
+    return $this->hasOne(\App\Models\Tailor::class,'user_id');
+}
 }

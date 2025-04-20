@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('projects', function (Blueprint $table) {
-            $table->id();
+            $table->id();                    // ProyekID
+            $table->string('name');          // Nama Proyek
+            $table->bigInteger('budget');    // Anggaran
+            $table->date('deadline');        // Deadline
+            $table->string('image')->nullable(); 
+            $table->enum('status',['pending','on_progress','completed'])->default('pending');
             $table->timestamps();
         });
     }
