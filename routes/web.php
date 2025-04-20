@@ -7,6 +7,8 @@ use App\Http\Controllers\PenjahitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
+use App\Http\Controllers\Admin\InvestorController as AdminInvestorController;
 
 // Welcome
 Route::get('/', fn() => view('welcome'));
@@ -26,6 +28,19 @@ Route::middleware(['auth','verified'])
      ->name('dashboard');
 
 // Halaman‐halaman per role
+
+// Admin
+Route::middleware(['auth','role:admin'])
+     ->prefix('admin')->name('admin.')
+     ->group(function(){
+         // Manajemen Proyek
+         Route::resource('projects', AdminProjectController::class)
+              ->only(['index','store','edit','update','destroy']);
+              // Manajemen Investor
+         Route::resource('investors', AdminInvestorController::class)
+         ->except(['show']);
+     });
+
 Route::middleware(['auth','role:ceo'])
      ->get('/ceo',[CeoController::class,'index'])
      ->name('ceo.dashboard');
