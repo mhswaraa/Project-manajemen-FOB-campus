@@ -6,10 +6,19 @@ use App\Http\Controllers\InvestorController;
 use App\Http\Controllers\PenjahitController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use Illuminate\Support\Facades\Route;
+
+// import untuk role admin
 use App\Http\Controllers\Admin\ProjectController as AdminProjectController;
 use App\Http\Controllers\Admin\InvestorController as AdminInvestorController;
 use App\Http\Controllers\Admin\PenjahitController as AdminPenjahitController;
+
+// import untuk role investor
+use App\Http\Controllers\Investor\DashboardController      as InvestorDashboardController;
+use App\Http\Controllers\Investor\ProjectController        as InvestorProjectController;
+use App\Http\Controllers\Investor\InvestmentController     as InvestorInvestmentController;
+use App\Http\Controllers\Investor\ProfileController        as InvestorProfileController;
+
+use Illuminate\Support\Facades\Route;
 
 // Welcome
 Route::get('/', fn() => view('welcome'));
@@ -50,18 +59,47 @@ Route::middleware(['auth','role:ceo'])
      ->name('ceo.dashboard');
 
 // Investor
-Route::middleware(['auth','role:investor'])->group(function(){
-     // Dashboard investor
-     Route::get('/investor',[InvestorController::class,'index'])
-          ->name('investor.dashboard');
+// Route::middleware(['auth','role:investor'])->group(function(){
+//      // Dashboard investor
+//      Route::get('/investor',[InvestorController::class,'index'])
+//           ->name('investor.dashboard');
  
-     // Form Create Investor (pre‐fill name/email)
-     Route::get('/investors/create',[InvestorController::class,'create'])
-          ->name('investors.create');
-     // Store Investor ke tabel `investors`
-     Route::post('/investors',[InvestorController::class,'store'])
-          ->name('investors.store');
- });
+//      // Form Create Investor (pre‐fill name/email)
+//      Route::get('/investors/create',[InvestorController::class,'create'])
+//           ->name('investors.create');
+//      // Store Investor ke tabel `investors`
+//      Route::post('/investors',[InvestorController::class,'store'])
+//           ->name('investors.store');
+//  });
+
+Route::prefix('investor')
+     ->middleware(['auth','role:investor'])
+     ->name('investor.')
+     ->group(function(){
+         // Dashboard
+         Route::get('/dashboard', [InvestorDashboardController::class,'index'])
+              ->name('dashboard');
+
+         // 1) Daftar Proyek
+         Route::get('/projects', [InvestorProjectController::class,'index'])
+              ->name('projects.index');
+
+         // 2) Form Investasi per Proyek
+         Route::get('/projects/{project}/invest', [InvestorProjectController::class,'create'])
+              ->name('projects.invest');
+         Route::post('/projects/{project}/invest', [InvestorProjectController::class,'store'])
+              ->name('projects.store');
+
+         // 3) Investasi Saya
+         Route::get('/investments', [InvestorInvestmentController::class,'index'])
+              ->name('investments.index');
+
+        // Profil Investor (create & update di satu controller)
+        Route::get ('/profile', [InvestorProfileController::class,'index'])
+        ->name('profile');
+               Route::post('/profile', [InvestorProfileController::class,'storeOrUpdate'])
+        ->name('profile.update');
+});
 
 // Penjahit Borongan
 Route::middleware(['auth','role:penjahit'])->group(function(){

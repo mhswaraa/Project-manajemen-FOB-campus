@@ -1,101 +1,118 @@
 <x-app-layout>
-    <div class="flex h-screen bg-gray-100 text-gray-800">
-        {{-- Sidebar --}}
-        <aside class="w-64 bg-white border-r shadow-lg hidden md:flex flex-col">
-            <div class="p-6 text-2xl font-bold text-indigo-600 tracking-tight border-b">
-                🧮 Investor Panel
+    <div class="flex h-screen bg-gray-50 text-gray-800">
+      {{-- Sidebar --}}
+      <aside class="w-64 bg-white border-r shadow flex flex-col">
+        <div class="p-6 text-2xl font-bold text-green-600 border-b">
+          💹 Investor
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+          {{-- Dashboard --}}
+          @php $active = request()->routeIs('investor.dashboard'); @endphp
+          <a href="{{ route('investor.dashboard') }}"
+             class="block py-2 px-3 rounded-lg transition
+               {{ $active
+                  ? 'bg-green-100 text-green-800'
+                  : 'text-gray-700 hover:bg-green-50' }}">
+            Dashboard
+          </a>
+      
+          {{-- Daftar Proyek --}}
+          @php $active = request()->routeIs('investor.projects.*'); @endphp
+          <a href="{{ route('investor.projects.index') }}"
+             class="block py-2 px-3 rounded-lg transition
+               {{ $active
+                  ? 'bg-green-100 text-green-800'
+                  : 'text-gray-700 hover:bg-green-50' }}">
+            Daftar Proyek
+          </a>
+      
+          {{-- Investasi Saya --}}
+          @php $active = request()->routeIs('investor.investments.*'); @endphp
+          <a href="{{ route('investor.investments.index') }}"
+             class="block py-2 px-3 rounded-lg transition
+               {{ $active
+                  ? 'bg-green-100 text-green-800'
+                  : 'text-gray-700 hover:bg-green-50' }}">
+            Investasi Saya
+          </a>
+      
+          {{-- Profil --}}
+          @php $active = request()->routeIs('investor.profile*'); @endphp
+          <a href="{{ route('investor.profile') }}"
+             class="block py-2 px-3 rounded-lg transition
+               {{ $active
+                  ? 'bg-green-100 text-green-800'
+                  : 'text-gray-700 hover:bg-green-50' }}">
+            Profil
+          </a>
+        </nav>
+      </aside>
+  
+      {{-- Main Content --}}
+      <main class="flex-1 p-6 overflow-y-auto">
+        {{-- Header --}}
+        <div class="mb-6">
+          <h1 class="text-3xl font-semibold text-green-700">Dashboard</h1>
+          <p class="text-gray-600">Halo, {{ Auth::user()->name }}!</p>
+        </div>
+  
+        {{-- Cards --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-lg shadow flex items-center">
+            <div class="p-3 bg-green-100 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   class="w-6 h-6 text-green-600" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M12 8v8m4-4H8"/>
+              </svg>
             </div>
-            <nav class="flex-1 px-4 py-6 space-y-2">
-                {{-- Menu Dashboard --}}
-                @php $active = request()->routeIs('investor.dashboard'); @endphp
-                <a href="{{ route('investor.dashboard') }}"
-                   class="flex items-center gap-3 py-2 px-3 rounded-lg transition
-                      {{ $active 
-                         ? 'bg-indigo-200 text-indigo-800' 
-                         : 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' }}">
-                    <!-- ikon Home -->
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="w-5 h-5 text-indigo-500"
-                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6"/>
-                    </svg>
-                    Dashboard
-                </a>
-
-                {{-- Menu Create --}}
-                @php $active = request()->routeIs('investors.create'); @endphp
-                <a href="{{ route('investors.create') }}"
-                   class="flex items-center gap-3 py-2 px-3 rounded-lg transition
-                      {{ $active 
-                         ? 'bg-indigo-200 text-indigo-800' 
-                         : 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' }}">
-                    <!-- ikon Plus -->
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         class="w-5 h-5 text-indigo-500"
-                         fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Buat Data
-                </a>
-
-                 {{-- Logout --}}
-                 <form method="POST" action="{{ route('logout') }}" class="pt-4">
-                    @csrf
-                    <button type="submit"
-                            class="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg text-red-600 hover:bg-red-100 transition">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="w-5 h-5"
-                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                  d="M17 16l4-4m0 0l-4-4m4 4H7
-                                     m6 4v1a2 2 0 002 2h3a2 2 0 002-2V7
-                                     a2 2 0 00-2-2h-3a2 2 0 00-2 2v1"/>
-                        </svg>
-                        Logout
-                    </button>
-                </form>
-            </nav>
-        </aside>
-
-        {{-- Main Content --}}
-        <main class="flex-1 overflow-y-auto p-6">
-            {{-- Header --}}
-            <div class="mb-8">
-                <h1 class="text-3xl font-semibold text-indigo-700">Investor Dashboard</h1>
-                <p class="text-gray-500">Halo, {{ Auth::user()->name }}!</p>
+            <div class="ml-4">
+              <p class="text-sm text-gray-500">Total Investasi</p>
+              <p class="text-2xl font-semibold">{{ number_format($totalInvested,2,',','.') }}</p>
             </div>
-
-            {{-- Tabel Data Investor (jika ada) --}}
-            @if(isset($investors) && $investors->count())
-                <div class="bg-white shadow rounded-lg overflow-hidden">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Investasi</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deadline</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach ($investors as $i => $inv)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $i+1 }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ $inv->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $inv->email }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ number_format($inv->amount, 2) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $inv->deadline }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <p class="text-gray-500">Belum ada data investasi. Silakan klik “Buat Data” untuk menambahkan.</p>
-            @endif
-        </main>
+          </div>
+  
+          <div class="bg-white p-6 rounded-lg shadow flex items-center">
+            <div class="p-3 bg-green-100 rounded-full">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   class="w-6 h-6 text-green-600" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path d="M9 17v-6l12-2"/>
+                <circle cx="5" cy="19" r="2"/>
+                <circle cx="17" cy="17" r="2"/>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm text-gray-500">Proyek Diikuti</p>
+              <p class="text-2xl font-semibold">{{ $projectsCount }}</p>
+            </div>
+          </div>
+  
+          {{-- Opsional: rata‑rata progress --}}
+          {{-- <div>…</div> --}}
+        </div>
+  
+        {{-- Recent Investments --}}
+        <div class="bg-white shadow rounded-lg p-6">
+          <h2 class="text-lg font-semibold text-gray-700 mb-4">Investasi Terbaru</h2>
+          @if($recentProjects->isEmpty())
+            <p class="text-gray-500">Belum ada investasi.</p>
+          @else
+            <ul class="divide-y divide-gray-200">
+              @foreach($recentProjects as $inv)
+                <li class="py-3 flex justify-between items-center">
+                  <div>
+                    <p class="font-medium text-gray-800">{{ $inv->project->name }}</p>
+                    <p class="text-sm text-gray-500">Rp {{ number_format($inv->amount,2,',','.') }} • {{ $inv->deadline }}</p>
+                  </div>
+                  <a href="{{ route('investor.projects.index') }}"
+                     class="text-green-600 hover:underline text-sm">Detail</a>
+                </li>
+              @endforeach
+            </ul>
+          @endif
+        </div>
+      </main>
     </div>
-</x-app-layout>
+  </x-app-layout>
+  
