@@ -33,10 +33,10 @@ class ProfileController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|max:255',
             'phone'    => 'required|string|max:20',
-            'amount'   => 'nullable|numeric|min:0',
-            'deadline' => 'nullable|date|after_or_equal:today',
-        ];
-
+            'amount'   => 'required|numeric|min:0',
+            'deadline' => 'required|date|after_or_equal:today',
+          ];
+          
         $data = $request->validate($rules);
 
         // Tambahkan user_id agar link ke tabel users
@@ -49,7 +49,7 @@ class ProfileController extends Controller
         );
 
         return redirect()
-            ->route('investor.profile.')
+            ->route('investor.profile')
             ->with('success','Data diri investor berhasil disimpan.');
     }
 }
