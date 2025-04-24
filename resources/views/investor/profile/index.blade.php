@@ -138,11 +138,14 @@
                 <x-input-error :messages="$errors->get('amount')" class="mt-1" />
               </div>
               <div>
-                <x-input-label for="deadline" :value="__('Deadline')" />
-                <x-text-input id="deadline" name="deadline" type="date"
+                <x-input-label for="registered_at" :value="__('Tanggal Daftar')" />
+                <x-text-input id="registered_at"
+                              name="registered_at"
+                              type="date"
                               class="block w-full"
-                              value="{{ old('deadline', $investor->deadline ?? '') }}" required />
-                <x-input-error :messages="$errors->get('deadline')" class="mt-1" />
+                              :value="old('registered_at', now()->format('Y-m-d'))" 
+                              required />
+                <x-input-error :messages="$errors->get('registered_at')" class="mt-1" />
               </div>
               <div class="flex justify-end">
                 <x-primary-button>Save Profile</x-primary-button>
@@ -171,24 +174,26 @@
                 </div>
               </dl>
             </div>
-            {{-- Statistik Singkat --}}
-            <div class="border-l md:pl-6">
-              <h3 class="text-lg font-semibold text-gray-700 mb-3">Statistik Investasi</h3>
-              <dl class="space-y-4">
-                @if($investor->amount)
-                  <div class="flex justify-between">
-                    <dt class="text-sm font-medium text-gray-600">Investasi</dt>
-                    <dd class="font-bold">{{ number_format($investor->amount,2,',','.') }}</dd>
-                  </div>
-                @endif
-                @if($investor->deadline)
-                  <div class="flex justify-between">
-                    <dt class="text-sm font-medium text-gray-600">Deadline</dt>
-                    <dd>{{ $investor->deadline }}</dd>
-                  </div>
-                @endif
-              </dl>
-            </div>
+           {{-- Statistik Singkat --}}
+<div class="border-l md:pl-6">
+  <h3 class="text-lg font-semibold text-gray-700 mb-3">Statistik Investasi</h3>
+  <dl class="space-y-4">
+    @if($investor->amount)
+      <div class="flex justify-between">
+        <dt class="text-sm font-medium text-gray-600">Total Investasi</dt>
+        <dd class="font-bold">{{ number_format($investor->amount, 2, ',', '.') }}</dd>
+      </div>
+    @endif
+
+    {{-- Ganti deadline ➔ registered_at --}}
+    @if($investor->registered_at)
+      <div class="flex justify-between">
+        <dt class="text-sm font-medium text-gray-600">Tanggal Daftar</dt>
+        <dd>{{ \Carbon\Carbon::parse($investor->registered_at)->format('d M Y') }}</dd>
+      </div>
+    @endif
+  </dl>
+</div>
             {{-- Edit Button --}}
             <div class="md:col-span-2 text-right">
               <a href="{{ route('investor.profile') }}#edit"

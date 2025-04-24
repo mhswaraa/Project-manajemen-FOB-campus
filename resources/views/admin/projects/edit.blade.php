@@ -102,25 +102,21 @@
                     </div>
 
                     <!-- Status -->
-                    <div>
-                        <x-input-label for="status" :value="__('Status')" />
-                        <select id="status" name="status" required
-                                class="block w-full mt-1 rounded-md border-gray-300 shadow-sm">
-                            <option value="pending"
-                                {{ old('status', $project->status)=='pending' ? 'selected' : '' }}>
-                                Pending
-                            </option>
-                            <option value="on_progress"
-                                {{ old('status', $project->status)=='on_progress' ? 'selected' : '' }}>
-                                On Progress
-                            </option>
-                            <option value="completed"
-                                {{ old('status', $project->status)=='completed' ? 'selected' : '' }}>
-                                Completed
-                            </option>
-                        </select>
-                        <x-input-error :messages="$errors->get('status')" class="mt-1" />
-                    </div>
+<div>
+    <x-input-label for="status" :value="__('Status')" />
+    <select id="status" name="status" required
+            class="block w-full mt-1 rounded-md border-gray-300 shadow-sm">
+        <option value="{{ \App\Models\Project::STATUS_ACTIVE }}"
+                {{ old('status', $project->status ?? '') === \App\Models\Project::STATUS_ACTIVE ? 'selected' : '' }}>
+            Active
+        </option>
+        <option value="{{ \App\Models\Project::STATUS_INACTIVE }}"
+                {{ old('status', $project->status ?? '') === \App\Models\Project::STATUS_INACTIVE ? 'selected' : '' }}>
+            Inactive
+        </option>
+    </select>
+    <x-input-error :messages="$errors->get('status')" class="mt-1" />
+</div>
 
                     <!-- Gambar Lama & Upload Baru -->
                     <div class="md:col-span-2">

@@ -96,29 +96,21 @@
                         <x-input-error :messages="$errors->get('deadline')" class="mt-1" />
                     </div>
                     <!-- Status -->
-                    <div>
-                        <x-input-label for="status" :value="__('Status')" />
-                        <select id="status" name="status" required
-                                class="block w-full mt-1 rounded-md border-gray-300 shadow-sm">
-                            <option value="pending" {{ old('status')=='pending'?'selected':'' }}>
-                                Pending
-                            </option>
-                            <option value="on_progress" {{ old('status')=='on_progress'?'selected':'' }}>
-                                On Progress
-                            </option>
-                            <option value="completed" {{ old('status')=='completed'?'selected':'' }}>
-                                Completed
-                            </option>
-                        </select>
-                        <x-input-error :messages="$errors->get('status')" class="mt-1" />
-                    </div>
-                    <!-- Image -->
-                    <div class="md:col-span-2">
-                        <x-input-label for="image" :value="__('Gambar Proyek (opsional)')" />
-                        <input id="image" name="image" type="file"
-                               class="block w-full mt-1" accept="image/*" />
-                        <x-input-error :messages="$errors->get('image')" class="mt-1" />
-                    </div>
+<div>
+    <x-input-label for="status" :value="__('Status')" />
+    <select id="status" name="status" required
+            class="block w-full mt-1 rounded-md border-gray-300 shadow-sm">
+        <option value="{{ \App\Models\Project::STATUS_ACTIVE }}"
+            {{ old('status') === \App\Models\Project::STATUS_ACTIVE ? 'selected' : '' }}>
+            Active
+        </option>
+        <option value="{{ \App\Models\Project::STATUS_INACTIVE }}"
+            {{ old('status') === \App\Models\Project::STATUS_INACTIVE ? 'selected' : '' }}>
+            Inactive
+        </option>
+    </select>
+    <x-input-error :messages="$errors->get('status')" class="mt-1" />
+</div>
                 </div>
 
                 <div class="flex justify-end">

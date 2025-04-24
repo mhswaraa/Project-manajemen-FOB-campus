@@ -16,7 +16,7 @@ class Investor extends Model
         'email',
         'phone',
         'amount',
-        'deadline',
+        'registered_at',
     ];
 
     public function user()
@@ -24,4 +24,9 @@ class Investor extends Model
         // relasi ke User melalui user_id
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    // Cast tanggal
+protected $casts = [
+    'registered_at' => 'date',
+];
 }

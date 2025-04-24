@@ -24,7 +24,7 @@ class ProjectController extends Controller
             'budget'   => 'required|numeric|min:0',
             'deadline' => 'required|date|after_or_equal:today',
             'image'    => 'nullable|image|max:2048',
-            'status'   => 'required|in:pending,on_progress,completed',
+            'status'   => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
         ]);
 
         // upload image jika ada

@@ -34,7 +34,7 @@ class ProfileController extends Controller
             'email'    => 'required|email|max:255',
             'phone'    => 'required|string|max:20',
             'amount'   => 'required|numeric|min:0',
-            'deadline' => 'required|date|after_or_equal:today',
+            'registered_at'  => 'required|date|before_or_equal:today',
           ];
           
         $data = $request->validate($rules);

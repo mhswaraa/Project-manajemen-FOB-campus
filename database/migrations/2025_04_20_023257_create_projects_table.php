@@ -17,7 +17,7 @@ return new class extends Migration
             $table->bigInteger('budget');    // Anggaran
             $table->date('deadline');        // Deadline
             $table->string('image')->nullable(); 
-            $table->enum('status',['pending','on_progress','completed'])->default('pending');
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });
     }
