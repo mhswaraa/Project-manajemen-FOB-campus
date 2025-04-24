@@ -5,51 +5,66 @@ namespace App\Http\Controllers\Investor;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;       // pastikan import model User
 use App\Models\Investor;
 
 class ProfileController extends Controller
 {
     /**
-     * Tampilkan profil / form create investor.
+     * Tampilkan profil / form lengkapi data.
      */
     public function index()
     {
-        $user       = Auth::user();
-        // Ambil record investor terkait user
-        $investor   = Investor::where('user_id', $user->id)->first();
+        $user     = Auth::user();
+        $investor = Investor::where('user_id', $user->id)->first();
 
-        return view('investor.profile.index', compact('investor'));
+        return view('investor.profile.index', compact('user','investor'));
     }
 
     /**
-     * Simpan data diri (create atau update).
+     * Simpan (create/update) data profil investor.
      */
     public function storeOrUpdate(Request $request)
     {
+        // Doc-block agar Intelephense tahu $user adalah App\Models\User
+        /** @var User $user */
         $user = Auth::user();
 
-        // validasi common
-        $rules = [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|max:255',
-            'phone'    => 'required|string|max:20',
-            'amount'   => 'required|numeric|min:0',
-            'registered_at'  => 'required|date|before_or_equal:today',
-          ];
-          
-        $data = $request->validate($rules);
+        // Validasi input
+        $data = $request->validate([
+            'name'                  => 'required|string|max:255',
+            'email'                 => 'required|email|max:255|unique:users,email,'.$user->id,
+            'phone'                 => 'required|string|max:20',
+            'password'              => 'nullable|confirmed|min:8',
+        ]);
 
-        // Tambahkan user_id agar link ke tabel users
-        $data['user_id'] = $user->id;
+        // Update User
+        $user->update([
+            'name'     => $data['name'],
+            'email'    => $data['email'],
+            // hanya hash jika password baru diisi
+            'password' => $data['password']
+                          ? Hash::make($data['password'])
+                          : $user->password,
+        ]);
 
-        // Create or Update
+        // Siapkan data investor
+        $invData = [
+            'user_id' => $user->id,
+            'name'    => $data['name'],
+            'email'   => $data['email'],
+            'phone'   => $data['phone'],
+        ];
+
+        // Create atau update record di tabel investors
         Investor::updateOrCreate(
-            ['user_id' => $user->id],   // cari berdasarkan user_id
-            $data                        // data baru
+            ['user_id' => $user->id],   // key utk mencari existing
+            $invData                    // data baru / updated
         );
 
         return redirect()
             ->route('investor.profile')
-            ->with('success','Data diri investor berhasil disimpan.');
+            ->with('success','Profil berhasil disimpan.');
     }
 }

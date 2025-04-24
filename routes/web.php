@@ -73,32 +73,34 @@ Route::middleware(['auth','role:ceo'])
 //  });
 
 Route::prefix('investor')
-     ->middleware(['auth','role:investor'])
+     ->middleware(['auth', 'checkRole:investor'])
      ->name('investor.')
      ->group(function(){
-         // Dashboard
-         Route::get('/dashboard', [InvestorDashboardController::class,'index'])
+         
+         // 1) Dashboard
+         Route::get('/dashboard', [InvestorDashboardController::class, 'index'])
               ->name('dashboard');
 
-         // 1) Daftar Proyek
-         Route::get('/projects', [InvestorProjectController::class,'index'])
+         // 2) Daftar Proyek
+         Route::get('/projects', [InvestorProjectController::class, 'index'])
               ->name('projects.index');
 
-         // 2) Form Investasi per Proyek
-         Route::get('/projects/{project}/invest', [InvestorProjectController::class,'create'])
+         // 3) Form Investasi per Proyek
+         Route::get('/projects/{project}/invest', [InvestorProjectController::class, 'create'])
               ->name('projects.invest');
-         Route::post('/projects/{project}/invest', [InvestorProjectController::class,'store'])
+         Route::post('/projects/{project}/invest', [InvestorProjectController::class, 'store'])
               ->name('projects.store');
 
-         // 3) Investasi Saya
-         Route::get('/investments', [InvestorInvestmentController::class,'index'])
+         // 4) Investasi Saya
+         Route::get('/investments', [InvestorInvestmentController::class, 'index'])
               ->name('investments.index');
 
-        // Profil Investor (create & update di satu controller)
-        Route::get ('/profile', [InvestorProfileController::class,'index'])
-        ->name('profile');
-               Route::post('/profile', [InvestorProfileController::class,'storeOrUpdate'])
-        ->name('profile.update');
+         // 5) Profil Investor
+         Route::get('/profile', [InvestorProfileController::class, 'index'])
+              ->name('profile');
+         Route::post('/profile', [InvestorProfileController::class, 'storeOrUpdate'])
+              ->name('profile.update');
+
 });
 
 // Penjahit Borongan
