@@ -1,5 +1,6 @@
 <?php
 
+// Path: database/migrations/2025_04_21_153750_make_amount_deadline_nullable_on_investors_table.php
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

@@ -1,4 +1,5 @@
 <?php
+// Path: database/seeders/UserSeeder.php
 
 namespace Database\Seeders;
 

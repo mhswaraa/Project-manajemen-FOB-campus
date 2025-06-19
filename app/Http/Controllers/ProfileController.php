@@ -1,4 +1,5 @@
 <?php
+// Path: app/Http/Controllers/ProfileController.php
 
 namespace App\Http\Controllers;
 

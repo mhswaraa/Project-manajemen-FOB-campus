@@ -1,4 +1,5 @@
 <?php
+// Path: app/Http/Controllers/InvestorController.php
 
 namespace App\Http\Controllers;
 

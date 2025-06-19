@@ -1,4 +1,5 @@
 <?php
+// Path: app/Http/Controllers/DashboardController.php
 
 namespace App\Http\Controllers;
 

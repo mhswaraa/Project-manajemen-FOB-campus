@@ -1,5 +1,6 @@
 <?php
 
+// Path: app/Http/Controllers/PenjahitController.php
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;

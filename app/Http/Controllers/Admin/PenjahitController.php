@@ -1,4 +1,5 @@
 <?php
+// Path: app/Http/Controllers/Admin/PenjahitController.php
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;

@@ -1,5 +1,5 @@
 <?php
-
+// Path: app/Http/Controllers/Investor/DashboardController.php
 namespace App\Http\Controllers\Investor;
 
 use App\Http\Controllers\Controller;

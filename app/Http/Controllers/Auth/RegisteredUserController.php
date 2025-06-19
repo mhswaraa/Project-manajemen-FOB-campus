@@ -1,4 +1,5 @@
 <?php
+// Path: app/Http/Controllers/Auth/RegisteredUserController.php
 
 namespace App\Http\Controllers\Auth;
 

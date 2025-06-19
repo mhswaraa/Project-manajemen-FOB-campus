@@ -21,9 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
+        'role', // Pastikan 'role' bisa diisi
     ];
-    
 
     /**
      * The attributes that should be hidden for serialization.
@@ -45,17 +44,19 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function isRole($role)
+    /**
+     * Mendapatkan data penjahit yang terkait dengan pengguna.
+     */
+    public function tailor()
     {
-    return $this->role === $role;
+        return $this->hasOne(Tailor::class);
     }
 
+    /**
+     * Mendapatkan data investor yang terkait dengan pengguna.
+     */
     public function investor()
-{
-    return $this->hasOne(\App\Models\Investor::class,'user_id');
-}
-public function tailor()
-{
-    return $this->hasOne(\App\Models\Tailor::class,'user_id');
-}
+    {
+        return $this->hasOne(Investor::class);
+    }
 }

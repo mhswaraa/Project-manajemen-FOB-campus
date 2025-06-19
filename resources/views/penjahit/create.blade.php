@@ -1,3 +1,4 @@
+{{-- resources/views/penjahit/create.blade.php --}}
 <x-app-layout>
   <div class="flex h-screen bg-gray-100 text-gray-800">
       {{-- Sidebar --}}
@@ -98,3 +99,5 @@
       </main>
   </div>
 </x-app-layout>
+
+

@@ -1,4 +1,5 @@
 <?php
+// Path: database/migrations/2025_04_20_023331_create_investors_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -17,7 +18,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone');
-            $table->decimal('amount', 15, 2);      // Jumlah investasi
+            $table->decimal('amount', 15, 2)->default(0)->after('phone');
             $table->date('deadline');
             $table->timestamps();
         

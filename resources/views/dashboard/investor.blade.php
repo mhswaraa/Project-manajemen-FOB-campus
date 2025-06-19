@@ -1,3 +1,4 @@
+{{-- resources/views/dashboard/investor.blade.php --}}
 <x-app-layout>
     <div class="flex h-screen bg-gray-50 text-gray-800">
       {{-- Sidebar --}}

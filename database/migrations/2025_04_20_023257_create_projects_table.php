@@ -1,4 +1,5 @@
 <?php
+// Path: database/migrations/2014_10_12_000000_create_failed_jobs_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

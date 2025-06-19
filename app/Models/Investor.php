@@ -1,4 +1,5 @@
 <?php
+// Path: app/Models/Investor.php
 
 namespace App\Models;
 

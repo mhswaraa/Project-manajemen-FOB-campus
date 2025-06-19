@@ -1,4 +1,5 @@
 <?php
+// Path: database/migrations/2025_04_18_123337_add_role_to_users_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

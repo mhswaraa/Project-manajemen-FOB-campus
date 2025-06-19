@@ -1,4 +1,7 @@
 <?php
+// Path: app/Http/Controllers/Admin/DashboardController.php
+// Compare this snippet from app/Http/Controllers/Admin/DashboardController.php:
+// <?php    
 
 namespace App\Http\Controllers\Admin;
 

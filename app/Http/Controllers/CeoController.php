@@ -1,5 +1,6 @@
 <?php
 
+// app/Http/Controllers/CeoController.php
 namespace App\Http\Controllers;
 
 class CeoController extends Controller

@@ -1,4 +1,5 @@
 <?php
+// Path: app/Models/ProductionProgress.php
 
 namespace App\Models;
 
