@@ -40,7 +40,7 @@ require __DIR__ . '/auth.php';
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])
          ->name('profile.edit');
-    // … you can add update/delete here …
+    // … (bisa ditambah update/delete jika perlu) …
 });
 
 // Single entrypoint: Dashboard (all roles)
@@ -67,18 +67,17 @@ Route::middleware(['auth', 'role:admin'])
     Route::get('projects/invested', [AdminProjectController::class, 'invested'])
          ->name('projects.invested');
 
-    // 1.b) Approve Investasi (ubah kolom approved pada investment_id)
-    // — gunakan {investment} bukan {project}, agar secara otomatis bind ke App\Models\Investment
+    // 1.b) Approve Investasi (per-investment)
     Route::post('projects/invested/{investment}/approve', [AdminProjectController::class, 'approveInvestment'])
          ->name('projects.invested.approve');
 
     // 2) Manajemen Investor (index, create, store, edit, update, destroy)
     Route::resource('investors', AdminInvestorController::class)
-         ->except(['show']);  
+         ->except(['show']);
 
     // 3) Manajemen Penjahit (index, create, store, edit, update, destroy)
     Route::resource('penjahits', AdminPenjahitController::class)
-         ->except(['show']);  
+         ->except(['show']);
 });
 
 
@@ -106,12 +105,9 @@ Route::prefix('investor')
     Route::get('dashboard', [InvestorDashboardController::class, 'index'])
          ->name('dashboard');
 
-    // 2) Daftar Proyek (Active)
+    // 2) Daftar Proyek Aktif
     Route::get('projects', [InvestorProjectController::class, 'index'])
          ->name('projects.index');
-
-     Route::get('admin/projects/invested', [AdminProjectController::class, 'invested'])
-     ->name('admin.projects.invested');
 
     // 3) Invest Form per Proyek
     Route::get('projects/{project}/invest', [InvestorProjectController::class, 'create'])
@@ -119,10 +115,11 @@ Route::prefix('investor')
     Route::post('projects/{project}/invest', [InvestorProjectController::class, 'store'])
          ->name('projects.store');
 
-    // 4) Investasi Saya
+    // 4) Investasi Saya (list + CRUD bagi investor sendiri)
     Route::get('investments', [InvestorInvestmentController::class, 'index'])
          ->name('investments.index');
-     // → Tambahkan routes berikut:
+    Route::get('investments/{investment}', [InvestorInvestmentController::class, 'show'])
+         ->name('investments.show');
     Route::get('investments/{investment}/edit', [InvestorInvestmentController::class, 'edit'])
          ->name('investments.edit');
     Route::put('investments/{investment}', [InvestorInvestmentController::class, 'update'])
@@ -135,8 +132,6 @@ Route::prefix('investor')
          ->name('profile');
     Route::post('profile', [InvestorProfileController::class, 'storeOrUpdate'])
          ->name('profile.update');
-
-     
 });
 
 
@@ -154,7 +149,7 @@ Route::prefix('penjahit')
     Route::get('dashboard', [PenjahitDashboardController::class, 'index'])
          ->name('dashboard');
 
-    // 2) Daftar Proyek (approved + sisa kuota)
+    // 2) Daftar Proyek Tersedia
     Route::get('projects', [PenjahitProjectController::class, 'index'])
          ->name('projects.index');
 
@@ -167,7 +162,6 @@ Route::prefix('penjahit')
     // 3) Tugas Saya (list + detail)
     Route::get('tasks', [PenjahitTaskController::class, 'index'])
          ->name('tasks.index');
-    // menampilkan detail satu tugas (assignment) 
     Route::get('tasks/{assignment}', [PenjahitTaskController::class, 'show'])
          ->name('tasks.show');
 
@@ -183,7 +177,7 @@ Route::prefix('penjahit')
 });
 
 
-// Register (only Admin can create users)
+// Register route (only Admin)
 Route::middleware(['auth','role:admin'])->group(function(){
     Route::get('register', [RegisteredUserController::class, 'create'])
          ->name('register');
