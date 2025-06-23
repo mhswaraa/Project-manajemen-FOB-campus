@@ -6,65 +6,99 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\Tailor;
+use App\Models\Portfolio;
+use App\Models\Specialization;
 
 class ProfileController extends Controller
 {
-    /**
-     * Tampilkan form profil / lengkapi data diri penjahit.
-     */
     public function index()
     {
-        $user   = Auth::user();
-        $tailor = $user->tailor; 
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $tailor = $user->tailor()->with('portfolios', 'specializations')->first();
+        $specializations = Specialization::all();
 
-        return view('penjahit.profile.index', compact('user','tailor'));
+        return view('penjahit.profile.index', compact('user', 'tailor', 'specializations'));
     }
 
-    /**
-     * Simpan (create/update) data profil penjahit.
-     */
     public function storeOrUpdate(Request $request)
     {
-        /** @var User $user */ 
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Validasi input
         $rules = [
+            'name'     => 'required|string|max:255',
             'address'  => 'required|string|max:255',
             'phone'    => 'required|string|max:20',
-            'email'    => 'required|email|max:255|unique:penjahits,email,'
-                          . optional($user->tailor)->tailor_id . ',tailor_id',
+            'email'    => 'required|email|max:255|unique:users,email,' . $user->id,
             'status'   => 'required|in:available,busy,inactive',
-            'password' => 'nullable|confirmed|min:8',
+            'specializations' => 'nullable|array',
+            'specializations.*' => 'exists:specializations,id'
         ];
         $data = $request->validate($rules);
 
-        // Jika password diisi, update password di tabel users
-        if ($request->filled('password')) {
-            $user->update([
-                'password' => Hash::make($data['password']),
-            ]);
-        }
+        // Update data di tabel users (nama dan email)
+        $user->update(['name' => $data['name'], 'email' => $data['email']]);
 
         // Siapkan data untuk tabel penjahits
         $tailorData = [
             'user_id' => $user->id,
             'address' => $data['address'],
             'phone'   => $data['phone'],
-            'email'   => $data['email'],
             'status'  => $data['status'],
+            'email'   => $data['email'],
         ];
 
         // Buat atau update record Tailor
-        Tailor::updateOrCreate(
-            ['user_id' => $user->id],
-            $tailorData
-        );
+        $tailor = Tailor::updateOrCreate(['user_id' => $user->id], $tailorData);
 
-        return redirect()
-            ->route('penjahit.profile')
-            ->with('success', 'Profil penjahit berhasil disimpan.');
+        // Simpan relasi spesialisasi
+        if ($request->has('specializations')) {
+            $tailor->specializations()->sync($request->specializations);
+        } else {
+            $tailor->specializations()->detach();
+        }
+
+        return redirect()->route('penjahit.profile.index')->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    public function addPortfolio(Request $request)
+    {
+        $request->validate([
+            'portfolio_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'portfolio_caption' => 'nullable|string|max:255',
+        ]);
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $tailor = $user->tailor;
+        
+        if ($request->hasFile('portfolio_image')) {
+            $path = $request->file('portfolio_image')->store('portfolios', 'public');
+
+            $tailor->portfolios()->create([
+                'image_path' => $path,
+                'caption' => $request->portfolio_caption
+            ]);
+        }
+
+        return back()->with('success', 'Gambar portofolio berhasil ditambahkan.');
+    }
+
+    public function deletePortfolio(Portfolio $portfolio)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        if ($portfolio->tailor_id !== $user->tailor->tailor_id) {
+            abort(403);
+        }
+
+        Storage::disk('public')->delete($portfolio->image_path);
+        $portfolio->delete();
+
+        return back()->with('success', 'Gambar portofolio berhasil dihapus.');
     }
 }

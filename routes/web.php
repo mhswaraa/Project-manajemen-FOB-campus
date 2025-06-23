@@ -10,6 +10,8 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\ProjectController      as AdminProjectController;
 use App\Http\Controllers\Admin\InvestorController     as AdminInvestorController;
 use App\Http\Controllers\Admin\PenjahitController     as AdminPenjahitController;
+use App\Http\Controllers\Admin\ReportController      as AdminReportController;
+use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 
 // Investor controllers
 use App\Http\Controllers\Investor\DashboardController  as InvestorDashboardController;
@@ -23,6 +25,8 @@ use App\Http\Controllers\Penjahit\ProjectController    as PenjahitProjectControl
 use App\Http\Controllers\Penjahit\TaskController       as PenjahitTaskController;
 use App\Http\Controllers\Penjahit\ProgressController   as PenjahitProgressController;
 use App\Http\Controllers\Penjahit\ProfileController    as PenjahitProfileController;
+use App\Http\Controllers\Penjahit\PayrollController as PenjahitPayrollController;
+use App\Http\Controllers\Penjahit\InvoiceController as PenjahitInvoiceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,6 +82,18 @@ Route::middleware(['auth', 'role:admin'])
     // 3) Manajemen Penjahit (index, create, store, edit, update, destroy)
     Route::resource('penjahits', AdminPenjahitController::class)
          ->except(['show']);
+
+      // 4) MANAJEMEN SPESIALISASI (BARU)
+    Route::resource('specializations', \App\Http\Controllers\Admin\SpecializationController::class)
+         ->except(['show', 'create', 'edit']);
+
+         // 5) HALAMAN LAPORAN (BARU)
+    Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
+
+     // GANTI RUTE PAYROLL LAMA DENGAN INI
+    Route::get('invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+    Route::post('invoices/{invoice}/pay', [AdminInvoiceController::class, 'pay'])->name('invoices.pay');
 });
 
 
@@ -171,9 +187,22 @@ Route::prefix('penjahit')
 
     // 5) Profil Penjahit (view & submit)
     Route::get('profile', [PenjahitProfileController::class, 'index'])
-         ->name('profile');
+     ->name('profile.index'); // <-- Ubah 'profile' menjadi 'profile.index'
+
     Route::post('profile', [PenjahitProfileController::class, 'storeOrUpdate'])
          ->name('profile.update');
+         
+     Route::post('profile/portfolio', [PenjahitProfileController::class, 'addPortfolio'])->name('profile.portfolio.add');
+
+     Route::delete('profile/portfolio/{portfolio}', [PenjahitProfileController::class, 'deletePortfolio'])->name('profile.portfolio.delete');
+
+     // 6) RIWAYAT GAJI (BARU)
+    Route::get('payrolls', [PenjahitPayrollController::class, 'index'])->name('payrolls.index');
+
+    // 7) MANAJEMEN INVOICE (BARU)
+    Route::get('invoices', [PenjahitInvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('invoices/create', [PenjahitInvoiceController::class, 'create'])->name('invoices.create');
+    Route::post('invoices', [PenjahitInvoiceController::class, 'store'])->name('invoices.store');
 });
 
 

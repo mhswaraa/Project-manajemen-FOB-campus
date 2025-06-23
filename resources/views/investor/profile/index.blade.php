@@ -1,182 +1,84 @@
-{{-- resources/views/investor/profile/index.blade.php --}}
 <x-app-layout>
-  <div class="flex h-screen bg-gray-50 text-gray-800">
-    {{-- Sidebar --}}
+  <div class="flex h-screen bg-gray-50">
     @include('investor.partials.sidebar')
 
-    {{-- Main Content --}}
-    <main class="flex-1 p-6 overflow-y-auto">
-      <div class="max-w-3xl mx-auto space-y-6">
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8">
+      <h1 class="text-3xl font-bold text-gray-800 mb-6">Profil Investor</h1>
 
-        {{-- Success Alert --}}
-        @if(session('success'))
-          <div class="px-4 py-3 bg-green-100 text-green-800 rounded shadow-sm">
-            {{ session('success') }}
+      {{-- Pesan Peringatan & Sukses --}}
+      @if(session('warning'))
+        <div class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700">
+          <p class="font-bold">Perhatian</p>
+          <p>{{ session('warning') }}</p>
+        </div>
+      @endif
+      @if(session('success'))
+        <div role="alert" class="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm"><div class="flex items-start gap-4"><span class="text-green-600"><x-heroicon-s-check-circle class="h-6 w-6"/></span><div class="flex-1"><strong class="block font-medium text-gray-900">Sukses!</strong><p class="mt-1 text-sm text-gray-700">{{ session('success') }}</p></div></div></div>
+      @endif
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {{-- Kolom Kiri: Form & Keamanan --}}
+        <div class="lg:col-span-2 space-y-8">
+          <!-- Form Informasi Profil -->
+          <div class="bg-white shadow-md rounded-lg p-6">
+            <section>
+              <header>
+                <h2 class="text-lg font-medium text-gray-900">Informasi Profil</h2>
+                <p class="mt-1 text-sm text-gray-600">Lengkapi atau perbarui informasi profil dan kontak Anda.</p>
+              </header>
+              <form action="{{ route('investor.profile.update') }}" method="POST" class="mt-6 space-y-6">
+                @csrf
+                <div>
+                  <x-input-label for="name" :value="__('Nama Lengkap')" />
+                  <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus />
+                  <x-input-error :messages="$errors->get('name')" class="mt-2"/>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <x-input-label for="email" :value="__('Alamat Email (Tidak dapat diubah)')" />
+                        <x-text-input id="email" type="email" class="mt-1 block w-full bg-gray-100" :value="$user->email" disabled />
+                    </div>
+                    <div>
+                        <x-input-label for="phone" :value="__('No. Telepon Aktif')" />
+                        <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" :value="old('phone', $investor->phone ?? '')" required />
+                        <x-input-error :messages="$errors->get('phone')" class="mt-2"/>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <x-primary-button>Simpan Perubahan</x-primary-button>
+                </div>
+              </form>
+            </section>
           </div>
-        @endif
-
-        {{-- Jika data investor belum ada --}}
-        @if(!$investor)
-          <div class="bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-2xl font-bold text-green-700 mb-4">Lengkapi Data Diri</h2>
-            <form action="{{ route('investor.profile.update') }}" method="POST" class="space-y-5">
-              @csrf
-
-              {{-- Nama --}}
-              <div>
-                <x-input-label for="name" :value="__('Nama')" />
-                <x-text-input id="name" name="name" type="text"
-                              class="mt-1 block w-full"
-                              :value="old('name', $user->name)" required />
-                <x-input-error :messages="$errors->get('name')" class="mt-1" />
-              </div>
-
-              {{-- Email --}}
-              <div>
-                <x-input-label for="email" :value="__('Email')" />
-                <x-text-input id="email" name="email" type="email"
-                              class="mt-1 block w-full"
-                              :value="old('email', $user->email)" required />
-                <x-input-error :messages="$errors->get('email')" class="mt-1" />
-              </div>
-
-              {{-- Phone --}}
-              <div>
-                <x-input-label for="phone" :value="__('No. HP')" />
-                <x-text-input id="phone" name="phone" type="text"
-                              class="mt-1 block w-full"
-                              :value="old('phone')" required />
-                <x-input-error :messages="$errors->get('phone')" class="mt-1" />
-              </div>
-
-              {{-- Password (opsional) --}}
-              <div>
-                <x-input-label for="password" :value="__('Password Baru (opsional)')" />
-                <x-text-input id="password" name="password" type="password"
-                              class="mt-1 block w-full" autocomplete="new-password" />
-                <x-input-error :messages="$errors->get('password')" class="mt-1" />
-              </div>
-
-              {{-- Confirm Password --}}
-              <div>
-                <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
-                <x-text-input id="password_confirmation" name="password_confirmation" type="password"
-                              class="mt-1 block w-full" autocomplete="new-password" />
-                <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1" />
-              </div>
-
-              <div class="flex justify-end">
-                <x-primary-button>{{ __('Simpan Profil') }}</x-primary-button>
-              </div>
-            </form>
+          <!-- Keamanan Akun (Menggunakan partials dari Penjahit) -->
+          <div class="bg-white shadow-md rounded-lg p-6">
+            @include('penjahit.partials.update-password-form')
           </div>
-        @else
-          {{-- Tampilkan Profil dan Form Edit --}}
-          <div class="bg-white shadow-lg rounded-lg p-6 space-y-6">
-            {{-- Detail Info --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h2 class="text-2xl font-bold text-green-700 mb-4">Profil Anda</h2>
-                <dl class="space-y-4">
-                  <div>
-                    <dt class="text-sm font-medium text-gray-600">Nama</dt>
-                    <dd class="mt-1 text-gray-800">{{ $investor->name }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-600">Email</dt>
-                    <dd class="mt-1 text-gray-800">{{ $investor->email }}</dd>
-                  </div>
-                  <div>
-                    <dt class="text-sm font-medium text-gray-600">No. HP</dt>
-                    <dd class="mt-1 text-gray-800">{{ $investor->phone }}</dd>
-                  </div>
-                </dl>
-              </div>
+        </div>
 
-              {{-- Statistik Singkat (opsional) --}}
-              <div class="border-l md:pl-6">
-                <h3 class="text-lg font-semibold text-gray-700 mb-3">Statistik Singkat</h3>
-                <dl class="space-y-4">
-                  <div class="flex justify-between">
-                    <dt class="text-sm font-medium text-gray-600">Total Investasi</dt>
-                    <dd class="font-bold">
-                      Rp {{ number_format($investor->amount ?? 0, 0, ',', '.') }}
-                    </dd>
-                  </div>
-                  <div class="flex justify-between">
-                    <dt class="text-sm font-medium text-gray-600">Didaftarkan Pada</dt>
-                    <dd>{{ \Carbon\Carbon::parse($investor->registered_at)->format('d M Y') }}</dd>
-                  </div>
-                </dl>
-              </div>
+        {{-- Kolom Kanan: Ringkasan Portofolio --}}
+        <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-lg shadow-md sticky top-8">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Ringkasan Portofolio</h3>
+                <div class="space-y-4">
+                    <div class="p-4 rounded-lg bg-blue-50">
+                        <p class="text-sm font-medium text-blue-600">Total Dana Diinvestasikan</p>
+                        <p class="text-2xl font-bold text-blue-800 mt-1">Rp {{ number_format($totalInvested, 0, ',', '.') }}</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-green-50">
+                        <p class="text-sm font-medium text-green-600">Estimasi Total Profit</p>
+                        <p class="text-2xl font-bold text-green-800 mt-1">Rp {{ number_format($estimatedProfit, 0, ',', '.') }}</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-indigo-50">
+                        <p class="text-sm font-medium text-indigo-600">Jumlah Proyek Diikuti</p>
+                        <p class="text-2xl font-bold text-indigo-800 mt-1">{{ $projectsCount }} Proyek</p>
+                    </div>
+                </div>
+                 <a href="{{ route('investor.investments.index') }}" class="mt-6 w-full flex items-center justify-center gap-2 text-center px-4 py-3 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 shadow-md">
+                    <x-heroicon-s-wallet class="h-5 w-5"/> Lihat Riwayat Investasi
+                </a>
             </div>
-
-            {{-- Tombol Edit --}}
-            <div class="text-right">
-              <button
-                onclick="document.getElementById('edit-form').scrollIntoView({ behavior: 'smooth' });"
-                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-                Edit Profil
-              </button>
-
-              {{-- Form Edit disembunyikan di bawah --}}
-              <div id="edit-form" class="mt-8">
-                <h2 class="text-xl font-bold text-green-700 mb-4">Ubah Profil</h2>
-                <form action="{{ route('investor.profile.update') }}" method="POST" class="space-y-5">
-                  @csrf
-
-                  {{-- Nama --}}
-                  <div>
-                    <x-input-label for="name" :value="__('Nama')" />
-                    <x-text-input id="name" name="name" type="text"
-                                  class="mt-1 block w-full"
-                                  :value="old('name',$investor->name)" required />
-                    <x-input-error :messages="$errors->get('name')" class="mt-1" />
-                  </div>
-
-                  {{-- Email --}}
-                  <div>
-                    <x-input-label for="email" :value="__('Email')" />
-                    <x-text-input id="email" name="email" type="email"
-                                  class="mt-1 block w-full"
-                                  :value="old('email',$investor->email)" required />
-                    <x-input-error :messages="$errors->get('email')" class="mt-1" />
-                  </div>
-
-                  {{-- Phone --}}
-                  <div>
-                    <x-input-label for="phone" :value="__('No. HP')" />
-                    <x-text-input id="phone" name="phone" type="text"
-                                  class="mt-1 block w-full"
-                                  :value="old('phone',$investor->phone)" required />
-                    <x-input-error :messages="$errors->get('phone')" class="mt-1" />
-                  </div>
-
-                  {{-- Password Baru --}}
-                  <div>
-                    <x-input-label for="password" :value="__('Password Baru (opsional)')" />
-                    <x-text-input id="password" name="password" type="password"
-                                  class="mt-1 block w-full" autocomplete="new-password" />
-                    <x-input-error :messages="$errors->get('password')" class="mt-1" />
-                  </div>
-
-                  {{-- Konfirmasi Password --}}
-                  <div>
-                    <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
-                    <x-text-input id="password_confirmation" name="password_confirmation" type="password"
-                                  class="mt-1 block w-full" autocomplete="new-password" />
-                    <x-input-error :messages="$errors->get('password_confirmation')" class="mt-1" />
-                  </div>
-
-                  <div class="flex justify-end">
-                    <x-primary-button>{{ __('Simpan Perubahan') }}</x-primary-button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        @endif
-
+        </div>
       </div>
     </main>
   </div>

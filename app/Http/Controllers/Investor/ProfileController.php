@@ -1,71 +1,77 @@
 <?php
-// Path: app/Http/Controllers/Investor/ProfileController.php
 
 namespace App\Http\Controllers\Investor;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use App\Models\User;       // pastikan import model User
 use App\Models\Investor;
+use App\Models\Investment;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
     /**
-     * Tampilkan profil / form lengkapi data.
+     * Menampilkan halaman profil investor.
      */
     public function index()
     {
-        $user     = Auth::user();
-        $investor = Investor::where('user_id', $user->id)->first();
+        $user = Auth::user();
+        $investor = $user->investor;
 
-        return view('investor.profile.index', compact('user','investor'));
+        // Data untuk kartu ringkasan portofolio
+        $totalInvested = 0;
+        $projectsCount = 0;
+        $estimatedProfit = 0;
+
+        if ($investor) {
+            $totalInvested = $investor->investments()->where('approved', true)->sum('amount');
+            $projectsCount = $investor->investments()->where('approved', true)->distinct('project_id')->count();
+            
+            // Kalkulasi estimasi profit
+            $estimatedProfit = DB::table('investments')
+                ->join('projects', 'investments.project_id', '=', 'projects.id')
+                ->where('investments.investor_id', $investor->investor_id)
+                ->where('investments.approved', true)
+                ->sum(DB::raw('investments.qty * projects.profit'));
+        }
+        
+        return view('investor.profile.index', compact(
+            'user', 
+            'investor',
+            'totalInvested',
+            'projectsCount',
+            'estimatedProfit'
+        ));
     }
 
     /**
-     * Simpan (create/update) data profil investor.
+     * Menyimpan atau memperbarui profil investor.
      */
     public function storeOrUpdate(Request $request)
     {
-        // Doc-block agar Intelephense tahu $user adalah App\Models\User
-        /** @var User $user */
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Validasi input
-        $data = $request->validate([
-            'name'                  => 'required|string|max:255',
-            'email'                 => 'required|email|max:255|unique:users,email,'.$user->id,
-            'phone'                 => 'required|string|max:20',
-            'password'              => 'nullable|confirmed|min:8',
+        $request->validate([
+            'name'  => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
         ]);
 
-        // Update User
-        $user->update([
-            'name'     => $data['name'],
-            'email'    => $data['email'],
-            // hanya hash jika password baru diisi
-            'password' => $data['password']
-                          ? Hash::make($data['password'])
-                          : $user->password,
-        ]);
+        $user->update(['name' => $request->name]);
 
-        // Siapkan data investor
-        $invData = [
-            'user_id' => $user->id,
-            'name'    => $data['name'],
-            'email'   => $data['email'],
-            'phone'   => $data['phone'],
-        ];
-
-        // Create atau update record di tabel investors
         Investor::updateOrCreate(
-            ['user_id' => $user->id],   // key utk mencari existing
-            $invData                    // data baru / updated
+            ['user_id' => $user->id],
+            [
+                'phone'         => $request->phone,
+                'name'          => $request->name,
+                'email'         => $user->email,
+                'registered_at' => now(),
+            ]
         );
 
-        return redirect()
-            ->route('investor.profile')
-            ->with('success','Profil berhasil disimpan.');
+        // PERBAIKAN DI SINI: Ubah nama rute menjadi 'investor.profile'
+        return redirect()->route('investor.profile')
+                         ->with('success', 'Profil Anda telah berhasil diperbarui.');
     }
 }

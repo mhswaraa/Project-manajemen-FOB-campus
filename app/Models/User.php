@@ -59,4 +59,22 @@ class User extends Authenticatable
     {
         return $this->hasOne(Investor::class);
     }
+
+    /**
+     * Relasi "jalan pintas" dari User ke Investment melalui Investor.
+     * Ini akan menyelesaikan error 'undefined method investments()'.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
+     */
+    public function investments()
+    {
+        return $this->hasManyThrough(
+            Investment::class, // Model akhir yang ingin diakses
+            Investor::class,   // Model perantara
+            'user_id',         // Foreign key di tabel investors (yang terhubung ke users)
+            'investor_id',     // Foreign key di tabel investments (yang terhubung ke investors)
+            'id',              // Local key di tabel users
+            'investor_id'      // Local key di tabel investors
+        );
+    }
 }

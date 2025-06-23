@@ -1,40 +1,63 @@
 <?php
-// Path: app/Http/Controllers/Investor/DashboardController.php
+
 namespace App\Http\Controllers\Investor;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Investment;
-use App\Models\Project;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    /**
+     * PERBAIKAN: Mengubah nama method dari __invoke menjadi index
+     * untuk menyesuaikan dengan definisi di routes/web.php
+     */
+    public function index(Request $request)
     {
-        $investorId = Auth::user()->investor->investor_id;
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $investor = $user->investor;
 
-        // Total investasi (jumlah uang)
-        $totalInvested = Investment::where('investor_id',$investorId)
-                                   ->sum('amount');
+        if (!$investor) {
+            return redirect()->route('investor.profile')->with('warning', 'Silakan lengkapi data diri Anda terlebih dahulu untuk melanjutkan.');
+        }
 
-        // Hitung projek yang diikuti
-        $projectsCount = Investment::where('investor_id',$investorId)
-                                   ->distinct('project_id')
-                                   ->count('project_id');
+        // 1. Ambil semua investasi yang disetujui untuk kalkulasi
+        $approvedInvestments = $investor->investments()->where('approved', true)->with('project')->get();
 
-        // (Opsional) Rata-rata progress: 
-        // misal pivot ke project lalu avg dari progress di tabel investering_progress
-        // $avgProgress = ...;
+        // 2. Data untuk Kartu Statistik
+        $totalInvested = $approvedInvestments->sum('amount');
+        $activeProjectsCount = $approvedInvestments->where('project.status', 'active')->pluck('project_id')->unique()->count();
+        
+        $estimatedProfit = $approvedInvestments->sum(function($investment) {
+            return $investment->qty * $investment->project->profit;
+        });
 
-        // Ambil 5 proyek terakhir yang diinvestasi
-        $recentProjects = Investment::with('project')
-                            ->where('investor_id',$investorId)
-                            ->latest()
-                            ->take(5)
-                            ->get();
+        // 3. Data untuk Pie Chart Alokasi Dana
+        $portfolioAllocation = $approvedInvestments->groupBy('project.name')
+            ->map(function ($group) {
+                return $group->sum('amount');
+            });
+        
+        $chartLabels = $portfolioAllocation->keys();
+        $chartData = $portfolioAllocation->values();
+        
+        // 4. Data untuk Feed Aktivitas Terbaru
+        $recentActivities = $investor->investments()
+                                ->with('project')
+                                ->latest()
+                                ->take(5)
+                                ->get();
 
         return view('dashboard.investor', compact(
-            'totalInvested','projectsCount','recentProjects'
+            'totalInvested',
+            'activeProjectsCount',
+            'estimatedProfit',
+            'chartLabels',
+            'chartData',
+            'recentActivities'
         ));
     }
 }

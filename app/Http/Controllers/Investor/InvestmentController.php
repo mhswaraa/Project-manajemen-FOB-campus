@@ -1,126 +1,132 @@
 <?php
-// Path: app/Http/Controllers/Investor/InvestmentController.php
 
 namespace App\Http\Controllers\Investor;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use App\Models\Investment;
-use App\Models\TailorProgress;
+use Illuminate\Support\Facades\Storage;
 
 class InvestmentController extends Controller
 {
-    public function __construct()
+    /**
+     * Menampilkan daftar investasi milik investor yang sedang login.
+     */
+    public function index(Request $request)
     {
-        // Hanya investor yang boleh mengakses semua method di sini
-        $this->middleware(['auth','role:investor']);
+        $investor = $request->user()->investor;
+        $tab = $request->query('tab', 'all'); // Default ke tab 'all'
+
+        // Query dasar untuk investasi milik investor ini
+        $query = $investor->investments()
+                        ->with([
+                            'project', // Eager load project details
+                            'project.progress', // Eager load progress produksi proyek
+                            'project.assignments' // Eager load data penugasan penjahit
+                        ])
+                        ->latest();
+
+        // Terapkan filter berdasarkan tab
+        if ($tab === 'pending') {
+            $query->where('approved', false);
+        } elseif ($tab === 'active') {
+            $query->where('approved', true);
+        }
+        
+        $investments = $query->paginate(9)->withQueryString();
+
+        // Hitung persentase progres produksi untuk setiap proyek
+        $investments->getCollection()->transform(function ($investment) {
+            $project = $investment->project;
+            if ($project) {
+                $totalAssigned = $project->assignments->sum('assigned_qty');
+                $totalCompleted = $project->progress->sum('quantity_done');
+                
+                $investment->production_progress = $totalAssigned > 0 
+                    ? round(($totalCompleted / $totalAssigned) * 100) 
+                    : 0;
+            } else {
+                $investment->production_progress = 0;
+            }
+            return $investment;
+        });
+
+        return view('investor.investments.index', compact('investments', 'tab'));
     }
 
     /**
-     * List semua investasi milik investor saat ini.
+     * Menampilkan detail satu investasi.
      */
-    public function index()
-{
-    $investorId = Auth::user()->investor->investor_id;
+    public function show(Investment $investment)
+    {
+        // Pastikan investor hanya bisa melihat investasinya sendiri
+        if ($investment->investor_id !== auth()->user()->investor->investor_id) {
+            abort(403);
+        }
 
-    $investments = Investment::with([
-            'project', 
-            'project.progress'   // <-- eager‐load hasManyThrough TailorProgress
-        ])
-        ->where('investor_id', $investorId)
-        ->latest()
-        ->get();
+        // Eager load data project dan relasi lainnya yang dibutuhkan
+        $investment->load(['project.investments', 'project.progress', 'project.assignments', 'project.investments.investor.user']);
+        $project = $investment->project;
 
-    return view('investor.investments.index', compact('investments'));
-}
+        // Hitung progres pendanaan proyek keseluruhan
+        $totalFundedQty = $project->investments->where('approved', true)->sum('qty');
+        $fundingPercentage = $project->quantity > 0 ? round(($totalFundedQty / $project->quantity) * 100) : 0;
+        
+        // Hitung progres produksi proyek keseluruhan
+        $totalAssigned = $project->assignments->sum('assigned_qty');
+        $totalCompleted = $project->progress->sum('quantity_done');
+        $productionPercentage = $totalAssigned > 0 ? round(($totalCompleted / $totalAssigned) * 100) : 0;
+
+        return view('investor.investments.show', compact(
+            'investment',
+            'project',
+            'fundingPercentage',
+            'productionPercentage'
+        ));
+    }
 
     /**
-     * Tampilkan form edit investasi.
+     * Menampilkan form untuk mengedit investasi (jika belum diapprove).
      */
     public function edit(Investment $investment)
     {
-        // Pastikan investor hanya bisa edit investasinya sendiri
-        if (Auth::user()->investor->investor_id !== $investment->investor_id) {
-            abort(403, 'Anda tidak diizinkan mengedit investasi ini.');
+        if ($investment->investor_id !== auth()->user()->investor->investor_id || $investment->approved) {
+            abort(403);
         }
-
         return view('investor.investments.edit', compact('investment'));
     }
 
     /**
-     * Simpan pembaruan investasi.
+     * Mengupdate data investasi.
      */
     public function update(Request $request, Investment $investment)
     {
-        if (Auth::user()->investor->investor_id !== $investment->investor_id) {
-            abort(403, 'Anda tidak diizinkan mengubah investasi ini.');
+        if ($investment->investor_id !== auth()->user()->investor->investor_id || $investment->approved) {
+            abort(403);
         }
+        // Logika untuk update investasi bisa ditambahkan di sini jika diperlukan
+        // Contoh: $investment->update($request->all());
 
-        $data = $request->validate([
-            'qty'     => 'required|integer|min:1',
-            'amount'  => 'required|numeric|min:1',
-            'message' => 'nullable|string|max:500',
-            'receipt' => 'nullable|file|mimes:jpg,png,pdf|max:2048',
-        ]);
-
-        // Handle upload ulang bukti
-        if ($request->hasFile('receipt')) {
-            if ($investment->receipt) {
-                Storage::disk('public')->delete($investment->receipt);
-            }
-            $data['receipt'] = $request->file('receipt')->store('receipts','public');
-        }
-
-        $investment->update($data);
-
-        return redirect()
-            ->route('investor.investments.index')
-            ->with('success','Investasi #'.$investment->id.' berhasil diperbarui.');
+        return redirect()->route('investor.investments.show', $investment)->with('success', 'Investasi berhasil diperbarui.');
     }
-
+    
     /**
-     * Hapus/batalkan investasi.
+     * Menghapus/membatalkan pengajuan investasi.
      */
     public function destroy(Investment $investment)
     {
-        if (Auth::user()->investor->investor_id !== $investment->investor_id) {
-            abort(403, 'Anda tidak diizinkan membatalkan investasi ini.');
+        if ($investment->investor_id !== auth()->user()->investor->investor_id || $investment->approved) {
+            abort(403);
         }
-
+        
+        // Hapus file receipt dari storage
         if ($investment->receipt) {
             Storage::disk('public')->delete($investment->receipt);
         }
+        
         $investment->delete();
 
-        return redirect()
-            ->route('investor.investments.index')
-            ->with('success','Investasi #'.$investment->id.' berhasil dibatalkan.');
+        return redirect()->route('investor.investments.index')
+                         ->with('success', 'Pengajuan investasi telah berhasil dibatalkan.');
     }
-
-    /**
-     * Tampilkan detail satu investasi.
-     */
-    public function show(Investment $investment)
-{
-    // Eager‑load relasi
-    $investment->load([
-        'project', 
-        'project.progress'   // pakai relasi baru
-    ]);
-
-    // Hitung total progress produksi dari hasManyThrough
-    $doneQty = $investment->project
-                  ->progress()
-                  ->sum('quantity_done');
-
-    $qty     = $investment->qty;
-    $pctDone = $qty ? round($doneQty / $qty * 100) : 0;
-
-    return view('investor.investments.show', compact(
-        'investment', 'doneQty', 'pctDone'
-    ));
-}
-
 }

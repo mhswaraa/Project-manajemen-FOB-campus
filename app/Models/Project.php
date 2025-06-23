@@ -11,16 +11,18 @@ use App\Models\Investment;
 
 class Project extends Model
 {
+
     // Mass assignment
     protected $fillable = [
-        'name',
-        'price_per_piece',
-        'quantity',
-        'profit',
-        'deadline',
-        'status',
-        'image',
-    ];
+    'name',
+    'price_per_piece',
+    'quantity',
+    'profit',
+    'wage_per_piece', // <-- TAMBAHKAN INI
+    'deadline',
+    'status',
+    'image',
+];
 
     // Casting untuk tipe numerik
     protected $casts = [

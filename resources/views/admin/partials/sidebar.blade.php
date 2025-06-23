@@ -1,76 +1,114 @@
-<aside class="w-64 bg-white border-r shadow-lg hidden md:flex flex-col">
-  <div class="p-6 text-2xl font-bold text-indigo-600 tracking-tight border-b">
-    🧵 PM FOB
-  </div>
-  <nav class="flex-1 px-4 py-6 space-y-2" x-data="{ openProyek: false }">
-    {{-- Dashboard --}}
-    @php $active = request()->routeIs('dashboard'); @endphp
-    <a href="{{ route('dashboard') }}"
-       class="flex items-center gap-3 py-2 px-3 rounded-lg transition {{ $active ? 'bg-indigo-200 text-indigo-800' : 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' }}">
-      <!-- icon home -->
-      Dashboard
-    </a>
+{{-- resources/views/admin/partials/sidebar.blade.php --}}
+<div class="flex h-screen w-64 flex-col justify-between border-e bg-white">
+    <div class="px-4 py-6">
+        {{-- Logo dan Nama Panel --}}
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-2 mb-6">
+            <span class="grid h-10 w-10 place-content-center rounded-lg bg-indigo-100 text-indigo-600">
+                <x-heroicon-s-shield-check class="h-6 w-6"/>
+            </span>
+            <span class="text-xl font-bold text-gray-800">Admin Panel</span>
+        </a>
 
-    {{-- Manajemen Proyek --}}
-    @php $isProyekSection = request()->routeIs('admin.projects.*') || request()->routeIs('admin.projects.invested'); @endphp
-    <button @click="openProyek = !openProyek"
-            class="flex items-center justify-between w-full gap-3 py-2 px-3 rounded-lg transition
-                   {{ $isProyekSection ? 'bg-indigo-200 text-indigo-800' : 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' }}">
-      <span class="flex items-center gap-3">
-        <!-- icon proyek -->
-        Manajemen Proyek
-      </span>
-      <svg :class="{ 'transform rotate-90': openProyek }"
-           class="w-4 h-4 transition-transform"
-           xmlns="http://www.w3.org/2000/svg" fill="none"
-           viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 5l7 7-7 7"/>
-      </svg>
-    </button>
+        {{-- Daftar Menu Utama --}}
+        <ul class="space-y-1">
+            <li>
+                <a href="{{ route('dashboard') }}"
+                   @class([
+                       'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
+                       'bg-indigo-100 text-indigo-700' => request()->routeIs('dashboard'),
+                       'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('dashboard')
+                   ])>
+                    <x-heroicon-o-home class="h-5 w-5" />
+                    Dashboard
+                </a>
+            </li>
 
-    {{-- Submenu Proyek --}}
-    <div x-show="openProyek"
-         x-collapse
-         class="space-y-1 pl-8">
-      {{-- Link ke semua proyek --}}
-      <a href="{{ route('admin.projects.index') }}"
-         class="block py-2 px-3 rounded-lg transition
-                {{ request()->routeIs('admin.projects.index') ? 'bg-indigo-100 text-indigo-800' : 'text-gray-600 hover:bg-indigo-50 hover:text-gray-800' }}">
-        Daftar Proyek
-      </a>
-      {{-- Link ke proyek yang sudah diinvestasi --}}
-      <a href="{{ route('admin.projects.invested') }}"
-         class="block py-2 px-3 rounded-lg transition
-                {{ request()->routeIs('admin.projects.invested') ? 'bg-indigo-100 text-indigo-800' : 'text-gray-600 hover:bg-indigo-50 hover:text-gray-800' }}">
-        Proyek Ter‑Investasi
-      </a>
+            {{-- Menu Dropdown untuk Proyek --}}
+            <li x-data="{ open: {{ request()->routeIs('admin.projects.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open"
+                   @class([
+                       'w-full flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
+                       'bg-indigo-100 text-indigo-700' => request()->routeIs('admin.projects.*'),
+                       'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.projects.*')
+                   ])>
+                    <span class="flex items-center gap-3">
+                        <x-heroicon-o-briefcase class="h-5 w-5" />
+                        Manajemen Proyek
+                    </span>
+                    <x-heroicon-s-chevron-down class="h-4 w-4 shrink-0 transition-transform" ::class="{'rotate-180': open}" />
+                </button>
+                <ul x-show="open" x-collapse class="mt-1 space-y-1 pl-6">
+                    <li><a href="{{ route('admin.projects.index') }}" @class(['block rounded-lg px-4 py-2 text-sm font-medium transition', 'text-indigo-700 font-semibold' => request()->routeIs('admin.projects.index'),'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.projects.index')])>Daftar Proyek</a></li>
+                    <li><a href="{{ route('admin.projects.invested') }}" @class(['block rounded-lg px-4 py-2 text-sm font-medium transition', 'text-indigo-700 font-semibold' => request()->routeIs('admin.projects.invested'),'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.projects.invested')])>Daftar Investasi</a></li>
+                </ul>
+            </li>
+            
+            <li>
+                <a href="{{ route('admin.investors.index') }}"
+                   @class(['flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition', 'bg-indigo-100 text-indigo-700' => request()->routeIs('admin.investors.*'), 'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.investors.*')])>
+                    <x-heroicon-o-user-group class="h-5 w-5" />
+                    Manajemen Investor
+                </a>
+            </li>
+            
+            <li x-data="{ open: {{ request()->routeIs('admin.penjahits.*') || request()->routeIs('admin.specializations.*') ? 'true' : 'false' }} }">
+                 <button @click="open = !open"
+                    @class(['w-full flex items-center justify-between gap-3 rounded-lg px-4 py-2 text-sm font-medium transition', 'bg-indigo-100 text-indigo-700' => request()->routeIs('admin.penjahits.*') || request()->routeIs('admin.specializations.*'), 'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.penjahits.*') && !request()->routeIs('admin.specializations.*')])>
+                    <span class="flex items-center gap-3">
+                        <x-heroicon-o-user-plus class="h-5 w-5" />
+                        Manajemen Penjahit
+                    </span>
+                    <x-heroicon-s-chevron-down class="h-4 w-4 shrink-0 transition-transform" ::class="{'rotate-180': open}" />
+                </button>
+                 <ul x-show="open" x-collapse class="mt-1 space-y-1 pl-6">
+                    <li><a href="{{ route('admin.penjahits.index') }}" @class(['block rounded-lg px-4 py-2 text-sm font-medium transition', 'text-indigo-700 font-semibold' => request()->routeIs('admin.penjahits.*'), 'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.penjahits.*')])>Daftar Penjahit</a></li>
+                    <li><a href="{{ route('admin.specializations.index') }}" @class(['block rounded-lg px-4 py-2 text-sm font-medium transition', 'text-indigo-700 font-semibold' => request()->routeIs('admin.specializations.*'), 'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.specializations.*')])>Kelola Spesialisasi</a></li>
+                </ul>
+            </li>
+
+            {{-- Pemisah & Menu Bisnis --}}
+            <hr class="my-2 border-gray-100" />
+            
+            <li>
+                <a href="{{ route('admin.invoices.index') }}"
+                   @class([
+                       'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
+                       'bg-indigo-100 text-indigo-700' => request()->routeIs('admin.invoices.*'),
+                       'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.invoices.*')
+                   ])>
+                    <x-heroicon-o-document-check class="h-5 w-5" />
+                    Manajemen Invoice
+                </a>
+            </li>
+             <li>
+                <a href="{{ route('admin.reports.index') }}"
+                   @class([
+                       'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
+                       'bg-indigo-100 text-indigo-700' => request()->routeIs('admin.reports.*'),
+                       'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.reports.*')
+                   ])>
+                    <x-heroicon-o-chart-bar-square class="h-5 w-5" />
+                    Laporan & Analitik
+                </a>
+            </li>
+        </ul>
     </div>
 
-    {{-- Manajemen Penjahit --}}
-    @php $active = request()->routeIs('admin.penjahits.*'); @endphp
-    <a href="{{ route('admin.penjahits.index') }}"
-       class="flex items-center gap-3 py-2 px-3 rounded-lg transition {{ $active ? 'bg-indigo-200 text-indigo-800' : 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' }}">
-      <!-- icon penjahit -->
-      Manajemen Penjahit
-    </a>
-
-    {{-- Manajemen Investor --}}
-    @php $active = request()->routeIs('admin.investors.*'); @endphp
-    <a href="{{ route('admin.investors.index') }}"
-       class="flex items-center gap-3 py-2 px-3 rounded-lg transition {{ $active ? 'bg-indigo-200 text-indigo-800' : 'text-gray-700 hover:bg-indigo-100 hover:text-indigo-700' }}">
-      <!-- icon investor -->
-      Manajemen Investor
-    </a>
-
-    {{-- Logout --}}
-    <form method="POST" action="{{ route('logout') }}" class="pt-4">
-      @csrf
-      <button type="submit"
-              class="flex items-center gap-3 w-full text-left py-2 px-3 rounded-lg text-red-600 hover:bg-red-100 transition">
-        <!-- icon logout -->
-        Logout
-      </button>
-    </form>
-  </nav>
-</aside>
+    {{-- Bagian Bawah: Profil Pengguna & Logout --}}
+    <div class="sticky inset-x-0 bottom-0 border-t border-gray-100">
+        <div class="flex items-center gap-3 bg-white p-4">
+            <img alt="Profil Admin"
+                 src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=E8EAF6&color=3F51B5"
+                 class="h-10 w-10 rounded-full object-cover" />
+            <div>
+                <p class="text-sm font-semibold text-gray-700">{{ Auth::user()->name }}</p>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="text-xs text-red-600 hover:underline focus:outline-none">
+                        Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

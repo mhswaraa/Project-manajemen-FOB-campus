@@ -1,58 +1,118 @@
 {{-- resources/views/penjahit/dashboard.blade.php --}}
-{{-- @extends('layouts.app') --}}
 <x-app-layout>
-  {{-- 1) Slot HEADER --}}
-  <x-slot name="header">
-    <div class="flex items-center justify-between">
-      {{-- Logo + Judul --}}
-      <div class="flex items-center gap-2">
-        <x-application-mark class="block h-8 w-auto text-teal-600" />
-        <h2 class="font-semibold text-xl text-gray-800">
-          Dashboard
-        </h2>
-      </div>
-      {{-- User Dropdown --}}
-      <x-dropdown align="right" width="48">
-        <x-slot name="trigger">
-          <button class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700">
-            <div>{{ Auth::user()->name }}</div>
-            <svg class="ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg"
-                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-        </x-slot>
-        <x-slot name="content">
-          {{-- Logout --}}
-          <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <x-dropdown-link href="{{ route('logout') }}"
-              onclick="event.preventDefault(); this.closest('form').submit();">
-              {{ __('Logout') }}
-            </x-dropdown-link>
-          </form>
-        </x-slot>
-      </x-dropdown>
-    </div>
-  </x-slot>
-
-  {{-- 2) Struktur utama: sidebar + konten --}}
   <div class="flex h-screen bg-gray-100 text-gray-800">
     {{-- Sidebar --}}
     @include('penjahit.partials.sidebar')
 
     {{-- Main content --}}
     <main class="flex-1 overflow-y-auto p-6">
-      {{-- ini isi lama @section('content') Anda --}}
-      @foreach($assignments as $task)
-        <div class="bg-white rounded-lg shadow p-4 mb-4">
-          <h2 class="text-lg font-semibold">{{ $task->project->name }}</h2>
-          <p>Status: {{ ucfirst($task->status) }}</p>
-          <p>Qty ditugaskan: {{ $task->assigned_qty }}</p>
-          <p>Total progress: {{ $task->progress->sum('quantity_done') }} pcs</p>
+      {{-- 1. Header Sambutan --}}
+      <div class="mb-8">
+        <h1 class="text-3xl font-semibold text-teal-700">Dashboard Penjahit</h1>
+        <p class="text-gray-500 mt-1">Selamat datang kembali, {{ Auth::user()->name }}!</p>
+      </div>
+
+      @php
+        // Menghitung statistik untuk kartu dari data $assignments
+        $totalAssigned = $assignments->sum('assigned_qty');
+        $totalDone = $assignments->reduce(function ($carry, $item) {
+            return $carry + $item->progress->sum('quantity_done');
+        }, 0);
+        $activeTasksCount = $assignments->where('status', '!=', 'completed')->count();
+        $remainingWork = $totalAssigned - $totalDone;
+      @endphp
+
+      {{-- 2. Kartu Statistik --}}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Tugas Aktif</p>
+            <p class="text-3xl font-bold text-teal-600">{{ $activeTasksCount }}</p>
+          </div>
+          <div class="p-3 bg-teal-100 rounded-full">
+            <x-heroicon-o-briefcase class="w-6 h-6 text-teal-600" />
+          </div>
         </div>
-      @endforeach
+
+        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Total Ditugaskan</p>
+            <p class="text-3xl font-bold text-gray-700">{{ $totalAssigned }} <span class="text-lg">pcs</span></p>
+          </div>
+          <div class="p-3 bg-gray-100 rounded-full">
+            <x-heroicon-o-clipboard-document-list class="w-6 h-6 text-gray-600" />
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Total Selesai</p>
+            <p class="text-3xl font-bold text-green-600">{{ $totalDone }} <span class="text-lg">pcs</span></p>
+          </div>
+          <div class="p-3 bg-green-100 rounded-full">
+            <x-heroicon-o-check-circle class="w-6 h-6 text-green-600" />
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500">Sisa Pekerjaan</p>
+            <p class="text-3xl font-bold text-orange-600">{{ $remainingWork }} <span class="text-lg">pcs</span></p>
+          </div>
+          <div class="p-3 bg-orange-100 rounded-full">
+            <x-heroicon-o-clock class="w-6 h-6 text-orange-600" />
+          </div>
+        </div>
+      </div>
+      
+      {{-- 3. Daftar Tugas yang Lebih Baik --}}
+      <h2 class="text-xl font-semibold text-gray-700 mb-4">Rincian Tugas Anda</h2>
+      <div class="space-y-4">
+        @forelse($assignments as $task)
+          @php
+            $done = $task->progress->sum('quantity_done');
+            $assigned = $task->assigned_qty;
+            $percentage = $assigned > 0 ? round(($done / $assigned) * 100) : 0;
+          @endphp
+          <div class="bg-white rounded-lg shadow p-5 transition hover:shadow-lg">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div class="flex-1 mb-4 sm:mb-0">
+                <h3 class="text-lg font-bold text-gray-800">{{ $task->project->name }}</h3>
+                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
+                  {{ $task->status == 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                  Status: {{ ucfirst($task->status) }}
+                </span>
+              </div>
+              <a href="{{ route('penjahit.tasks.show', $task) }}"
+                 class="px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                Lihat Detail & Update
+              </a>
+            </div>
+            <div class="mt-4">
+              <div class="flex justify-between items-center mb-1 text-sm">
+                <span class="font-medium text-gray-600">Progress</span>
+                <span class="font-semibold text-teal-600">{{ $percentage }}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-teal-500 h-2.5 rounded-full" style="width: {{ $percentage }}%"></div>
+              </div>
+              <div class="text-right text-sm text-gray-500 mt-1">
+                {{ $done }} / {{ $assigned }} pcs
+              </div>
+            </div>
+          </div>
+        @empty
+          {{-- 4. Pesan untuk Keadaan Kosong --}}
+          <div class="bg-white text-center rounded-lg shadow p-8">
+            <x-heroicon-o-document-check class="w-16 h-16 mx-auto text-gray-300" />
+            <h3 class="mt-4 text-lg font-medium text-gray-700">Tidak Ada Tugas</h3>
+            <p class="mt-1 text-sm text-gray-500">Saat ini tidak ada tugas yang aktif untuk Anda.</p>
+            <a href="{{ route('penjahit.projects.index') }}" class="mt-4 inline-block px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700">
+              Lihat Proyek Tersedia
+            </a>
+          </div>
+        @endforelse
+      </div>
     </main>
   </div>
 </x-app-layout>

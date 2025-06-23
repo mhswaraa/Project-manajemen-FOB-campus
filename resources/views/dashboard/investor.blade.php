@@ -1,119 +1,131 @@
-{{-- resources/views/dashboard/investor.blade.php --}}
 <x-app-layout>
-    <div class="flex h-screen bg-gray-50 text-gray-800">
-      {{-- Sidebar --}}
-      <aside class="w-64 bg-white border-r shadow flex flex-col">
-        <div class="p-6 text-2xl font-bold text-green-600 border-b">
-          💹 Investor
+  {{-- Sertakan Chart.js dari CDN --}}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <div class="flex h-screen bg-gray-50">
+    @include('investor.partials.sidebar')
+
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8">
+      {{-- Header --}}
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Dashboard Investor</h1>
+        <p class="text-gray-500 mt-1">Selamat datang, {{ Auth::user()->name }}. Pantau kinerja portofolio Anda di sini.</p>
+      </div>
+
+      {{-- Kartu Statistik --}}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <p class="text-sm font-medium text-gray-500">Total Dana Diinvestasikan</p>
+          <p class="text-2xl font-bold text-blue-600 mt-1">Rp {{ number_format($totalInvested, 0, ',', '.') }}</p>
         </div>
-        <nav class="flex-1 p-4 space-y-2">
-          {{-- Dashboard --}}
-          @php $active = request()->routeIs('investor.dashboard'); @endphp
-          <a href="{{ route('investor.dashboard') }}"
-             class="block py-2 px-3 rounded-lg transition
-               {{ $active
-                  ? 'bg-green-100 text-green-800'
-                  : 'text-gray-700 hover:bg-green-50' }}">
-            Dashboard
-          </a>
-      
-          {{-- Daftar Proyek --}}
-          @php $active = request()->routeIs('investor.projects.*'); @endphp
-          <a href="{{ route('investor.projects.index') }}"
-             class="block py-2 px-3 rounded-lg transition
-               {{ $active
-                  ? 'bg-green-100 text-green-800'
-                  : 'text-gray-700 hover:bg-green-50' }}">
-            Daftar Proyek
-          </a>
-      
-          {{-- Investasi Saya --}}
-          @php $active = request()->routeIs('investor.investments.*'); @endphp
-          <a href="{{ route('investor.investments.index') }}"
-             class="block py-2 px-3 rounded-lg transition
-               {{ $active
-                  ? 'bg-green-100 text-green-800'
-                  : 'text-gray-700 hover:bg-green-50' }}">
-            Investasi Saya
-          </a>
-      
-          {{-- Profil --}}
-          @php $active = request()->routeIs('investor.profile*'); @endphp
-          <a href="{{ route('investor.profile') }}"
-             class="block py-2 px-3 rounded-lg transition
-               {{ $active
-                  ? 'bg-green-100 text-green-800'
-                  : 'text-gray-700 hover:bg-green-50' }}">
-            Profil
-          </a>
-        </nav>
-      </aside>
-  
-      {{-- Main Content --}}
-      <main class="flex-1 p-6 overflow-y-auto">
-        {{-- Header --}}
-        <div class="mb-6">
-          <h1 class="text-3xl font-semibold text-green-700">Dashboard</h1>
-          <p class="text-gray-600">Halo, {{ Auth::user()->name }}!</p>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <p class="text-sm font-medium text-gray-500">Estimasi Keuntungan</p>
+          <p class="text-2xl font-bold text-green-600 mt-1">Rp {{ number_format($estimatedProfit, 0, ',', '.') }}</p>
         </div>
-  
-        {{-- Cards --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div class="bg-white p-6 rounded-lg shadow flex items-center">
-            <div class="p-3 bg-green-100 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg"
-                   class="w-6 h-6 text-green-600" fill="none"
-                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path d="M12 8v8m4-4H8"/>
-              </svg>
-            </div>
-            <div class="ml-4">
-              <p class="text-sm text-gray-500">Total Investasi</p>
-              <p class="text-2xl font-semibold">{{ number_format($totalInvested,2,',','.') }}</p>
-            </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+          <p class="text-sm font-medium text-gray-500">Proyek Aktif Diikuti</p>
+          <p class="text-2xl font-bold text-indigo-600 mt-1">{{ $activeProjectsCount }} Proyek</p>
+        </div>
+        {{-- Tombol Aksi --}}
+        <a href="{{ route('investor.projects.index') }}" class="bg-teal-500 text-white p-6 rounded-lg shadow-md flex items-center justify-center text-center hover:bg-teal-600 transition">
+          <div>
+            <x-heroicon-o-currency-dollar class="w-8 h-8 mx-auto" />
+            <p class="mt-2 text-sm font-semibold">Cari Peluang Baru</p>
           </div>
-  
-          <div class="bg-white p-6 rounded-lg shadow flex items-center">
-            <div class="p-3 bg-green-100 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg"
-                   class="w-6 h-6 text-green-600" fill="none"
-                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path d="M9 17v-6l12-2"/>
-                <circle cx="5" cy="19" r="2"/>
-                <circle cx="17" cy="17" r="2"/>
-              </svg>
+        </a>
+      </div>
+
+      {{-- Visualisasi & Aktivitas --}}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {{-- Kolom Kiri: Alokasi Portofolio --}}
+        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+           <h3 class="text-lg font-medium text-gray-900 mb-4">Alokasi Portofolio</h3>
+           @if($chartData->isNotEmpty())
+            <div class="h-80">
+                <canvas id="portfolioChart"></canvas>
             </div>
-            <div class="ml-4">
-              <p class="text-sm text-gray-500">Proyek Diikuti</p>
-              <p class="text-2xl font-semibold">{{ $projectsCount }}</p>
+           @else
+            <div class="text-center py-12">
+                <p class="text-gray-500">Anda belum memiliki investasi aktif untuk ditampilkan.</p>
             </div>
-          </div>
-  
-          {{-- Opsional: rata‑rata progress --}}
-          {{-- <div>…</div> --}}
+           @endif
         </div>
-  
-        {{-- Recent Investments --}}
-        <div class="bg-white shadow rounded-lg p-6">
-          <h2 class="text-lg font-semibold text-gray-700 mb-4">Investasi Terbaru</h2>
-          @if($recentProjects->isEmpty())
-            <p class="text-gray-500">Belum ada investasi.</p>
-          @else
-            <ul class="divide-y divide-gray-200">
-              @foreach($recentProjects as $inv)
-                <li class="py-3 flex justify-between items-center">
-                  <div>
-                    <p class="font-medium text-gray-800">{{ $inv->project->name }}</p>
-                    <p class="text-sm text-gray-500">Rp {{ number_format($inv->amount,2,',','.') }} • {{ $inv->deadline }}</p>
+        
+        {{-- Kolom Kanan: Aktivitas Terbaru --}}
+        <div class="bg-white p-6 rounded-lg shadow-md">
+           <h3 class="text-lg font-medium text-gray-900 mb-4">Aktivitas Terbaru</h3>
+           <div class="space-y-4">
+             @forelse ($recentActivities as $activity)
+               <div class="flex items-start gap-4">
+                  <div @class(['flex-shrink-0 h-10 w-10 rounded-lg flex items-center justify-center', 'bg-green-100' => $activity->approved, 'bg-yellow-100' => !$activity->approved])>
+                      <x-heroicon-o-check-circle @class(['h-6 w-6', 'text-green-600' => $activity->approved, 'text-yellow-600' => !$activity->approved]) />
                   </div>
-                  <a href="{{ route('investor.projects.index') }}"
-                     class="text-green-600 hover:underline text-sm">Detail</a>
-                </li>
-              @endforeach
-            </ul>
-          @endif
+                  <div>
+                      <p class="text-sm font-medium text-gray-800">
+                          Investasi pada <span class="font-bold">{{ $activity->project->name }}</span>
+                      </p>
+                      <p @class(['text-xs font-semibold', 'text-green-600' => $activity->approved, 'text-yellow-600' => !$activity->approved])>
+                          Status: {{ $activity->approved ? 'Disetujui' : 'Menunggu Persetujuan' }}
+                      </p>
+                      <p class="text-xs text-gray-500">{{ $activity->created_at->diffForHumans() }}</p>
+                  </div>
+               </div>
+             @empty
+                <p class="text-sm text-gray-500 text-center py-8">Tidak ada aktivitas terbaru.</p>
+             @endforelse
+           </div>
         </div>
-      </main>
-    </div>
-  </x-app-layout>
+      </div>
+    </main>
+  </div>
   
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('portfolioChart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: {!! json_encode($chartLabels) !!},
+                    datasets: [{
+                        label: 'Alokasi Dana',
+                        data: {!! json_encode($chartData) !!},
+                        backgroundColor: [
+                            '#4f46e5', // Indigo
+                            '#059669', // Green
+                            '#2563eb', // Blue
+                            '#d97706', // Amber
+                            '#db2777', // Pink
+                            '#6d28d9', // Violet
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+  </script>
+</x-app-layout>

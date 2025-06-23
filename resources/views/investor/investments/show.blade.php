@@ -1,124 +1,104 @@
-{{-- resources/views/investor/investments/show.blade.php --}}
 <x-app-layout>
-  <div class="flex h-screen bg-gray-50 text-gray-800">
-    {{-- Sidebar --}}
+  <div class="flex h-screen bg-gray-50">
     @include('investor.partials.sidebar')
 
-    {{-- Main Content --}}
-    <main class="flex-1 p-6 overflow-y-auto">
-      {{-- Tombol Kembali --}}
-      <div class="mb-4">
-        <a href="{{ route('investor.investments.index') }}"
-           class="text-sm text-green-600 hover:underline">
-          ← Kembali ke Investasi Saya
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8" x-data="{ receiptModalOpen: false, receiptImageUrl: '' }">
+      
+      {{-- Header --}}
+      <div class="mb-6">
+        <a href="{{ route('investor.investments.index') }}" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-2">
+          <x-heroicon-s-arrow-left class="h-4 w-4" />
+          Kembali ke Riwayat Investasi
         </a>
+        <h1 class="text-3xl font-bold text-gray-800">Detail Investasi</h1>
       </div>
 
-      {{-- Judul --}}
-      <h1 class="text-2xl font-semibold text-green-700 mb-6">
-        Detail Investasi #{{ $investment->id }}
-      </h1>
-
-      @php
-        // Data proyek & finansial
-        $proj      = $investment->project;
-        $price     = $proj->price_per_piece;
-        $qty       = $investment->qty;
-        $modal     = $investment->amount;          // modal total
-        $hppTotal  = $price * $qty;                // harga pokok total
-        $profitPer = $proj->profit;                // profit per pcs
-        $totProfit = $profitPer * $qty;            // total profit
-
-        // Progress produksi (semua record untuk proyek ini)
-        $allProg   = $proj->productionProgress;
-        $doneQty   = $allProg->sum('quantity_done');
-        $pctDone   = $qty ? round($doneQty / $qty * 100) : 0;
-      @endphp
-
-      {{-- Ringkasan Finansial --}}
-      <div class="bg-white p-6 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="space-y-4">
-          <div>
-            <span class="font-medium">Modal (Total Investasi):</span><br>
-            Rp {{ number_format($modal,0,',','.') }}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {{-- Kolom Kiri: Detail Investasi & Finansial --}}
+        <div class="lg:col-span-2 space-y-8">
+          {{-- Kartu Kuitansi Investasi --}}
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex justify-between items-start">
+              <div>
+                <h2 class="text-xl font-bold text-gray-800">Proyek: {{ $project->name }}</h2>
+                <p class="text-sm text-gray-500">ID Investasi: #{{ $investment->id }}</p>
+              </div>
+              <span @class(['px-3 py-1 text-sm font-semibold rounded-full', 'bg-yellow-100 text-yellow-800' => !$investment->approved, 'bg-green-100 text-green-800' => $investment->approved ])>
+                {{ $investment->approved ? 'Disetujui' : 'Pending' }}
+              </span>
+            </div>
+            <div class="mt-6 pt-4 border-t">
+              <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <div><dt class="text-gray-500">Tanggal Pengajuan</dt><dd class="mt-1 font-medium text-gray-900">{{ $investment->created_at->format('d F Y') }}</dd></div>
+                <div><dt class="text-gray-500">Jumlah Slot</dt><dd class="mt-1 font-medium text-gray-900">{{ $investment->qty }} pcs</dd></div>
+                <div><dt class="text-gray-500">Total Investasi</dt><dd class="mt-1 font-bold text-indigo-600">Rp {{ number_format($investment->amount, 0, ',', '.') }}</dd></div>
+                <div><dt class="text-gray-500">Estimasi Profit Anda</dt><dd class="mt-1 font-bold text-green-600">Rp {{ number_format($investment->qty * $project->profit, 0, ',', '.') }}</dd></div>
+              </dl>
+            </div>
+            @if($investment->receipt)
+            <div class="mt-6 pt-4 border-t">
+              <button @click="receiptModalOpen = true; receiptImageUrl = '{{ asset('storage/' . $investment->receipt) }}'" class="w-full flex items-center justify-center gap-2 text-center px-4 py-2 bg-gray-100 text-gray-800 text-sm font-semibold rounded-lg hover:bg-gray-200">
+                <x-heroicon-s-photo class="h-5 w-5"/> Lihat Bukti Pembayaran
+              </button>
+            </div>
+            @endif
           </div>
-          <div>
-            <span class="font-medium">HPP (Harga Pokok):</span><br>
-            Rp {{ number_format($hppTotal,0,',','.') }}
-          </div>
-          <div>
-            <span class="font-medium">Total Profit:</span><br>
-            Rp {{ number_format($totProfit,0,',','.') }}
+
+          {{-- Linimasa Status (Timeline) --}}
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Linimasa Investasi</h3>
+            <ol class="relative border-l border-gray-200">                  
+                <li class="mb-10 ml-6">            
+                    <span class="absolute flex items-center justify-center w-6 h-6 bg-green-100 rounded-full -left-3 ring-8 ring-white"><x-heroicon-s-check-circle class="w-4 h-4 text-green-600"/></span>
+                    <h3 class="flex items-center mb-1 text-base font-semibold text-gray-900">Investasi Diajukan</h3>
+                    <time class="block mb-2 text-sm font-normal leading-none text-gray-400">{{ $investment->created_at->format('d M Y, H:i') }}</time>
+                </li>
+                <li class="mb-10 ml-6">
+                    @if($investment->approved)
+                      <span class="absolute flex items-center justify-center w-6 h-6 bg-green-100 rounded-full -left-3 ring-8 ring-white"><x-heroicon-s-check-circle class="w-4 h-4 text-green-600"/></span>
+                      <h3 class="mb-1 text-base font-semibold text-gray-900">Disetujui oleh Admin</h3>
+                      <time class="block mb-2 text-sm font-normal leading-none text-gray-400">Status proyek kini aktif.</time>
+                    @else
+                      <span class="absolute flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full -left-3 ring-8 ring-white"><x-heroicon-s-clock class="w-4 h-4 text-gray-500"/></span>
+                      <h3 class="mb-1 text-base font-semibold text-gray-500">Menunggu Persetujuan</h3>
+                    @endif
+                </li>
+                <li class="ml-6">
+                    @if($productionPercentage >= 100)
+                      <span class="absolute flex items-center justify-center w-6 h-6 bg-green-100 rounded-full -left-3 ring-8 ring-white"><x-heroicon-s-check-circle class="w-4 h-4 text-green-600"/></span>
+                      <h3 class="mb-1 text-base font-semibold text-gray-900">Proyek Selesai</h3>
+                    @else
+                      <span class="absolute flex items-center justify-center w-6 h-6 bg-gray-100 rounded-full -left-3 ring-8 ring-white"><x-heroicon-s-cog-6-tooth class="w-4 h-4 text-gray-500"/></span>
+                      <h3 class="mb-1 text-base font-semibold text-gray-500">Produksi Berlangsung</h3>
+                    @endif
+                </li>
+            </ol>
           </div>
         </div>
-        <div class="space-y-4">
-          <div>
-            <span class="font-medium">Profit per pcs:</span><br>
-            Rp {{ number_format($profitPer,0,',','.') }}
-          </div>
-          <div>
-            <span class="font-medium">Qty Investasi:</span><br>
-            {{ $qty }} pcs
-          </div>
-          <div>
-            <span class="font-medium">Harga/pcs:</span><br>
-            Rp {{ number_format($price,0,',','.') }}
-          </div>
+        
+        {{-- Kolom Kanan: Progres Proyek Keseluruhan --}}
+        <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-lg shadow-md sticky top-8">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Progres Proyek Keseluruhan</h3>
+              <div class="space-y-6">
+                {{-- Progres Pendanaan Proyek --}}
+                <div>
+                  <div class="flex justify-between text-sm"><span class="font-medium text-gray-600">Pendanaan</span><span class="font-semibold text-blue-600">{{ $fundingPercentage }}%</span></div>
+                  <div class="w-full bg-gray-200 rounded-full h-2 mt-1"><div class="bg-blue-600 h-2 rounded-full" style="width: {{ $fundingPercentage }}%"></div></div>
+                </div>
+                {{-- Progres Produksi Proyek --}}
+                <div>
+                  <div class="flex justify-between text-sm"><span class="font-medium text-gray-600">Produksi</span><span class="font-semibold text-teal-600">{{ $productionPercentage }}%</span></div>
+                  <div class="w-full bg-gray-200 rounded-full h-2 mt-1"><div class="bg-teal-500 h-2 rounded-full" style="width: {{ $productionPercentage }}%"></div></div>
+                </div>
+              </div>
+            </div>
         </div>
       </div>
 
-      {{-- Progress Produksi --}}
-<div class="bg-white p-6 rounded-lg shadow mb-6">
-  <h2 class="text-lg font-semibold mb-4">Progress Produksi</h2>
-
-  @if($doneQty > 0)
-    <div class="text-sm text-gray-700 mb-2">
-      {{ $doneQty }}/{{ $investment->qty }} pcs • {{ $pctDone }}%
-    </div>
-    <div class="w-full bg-gray-200 h-3 rounded mb-4">
-      <div class="bg-green-600 h-3 rounded" style="width: {{ $pctDone }}%"></div>
-    </div>
-
-    <h3 class="font-medium mb-2">Riwayat Harian</h3>
-    <ul class="divide-y divide-gray-200">
-      @foreach($investment->project->progress->sortBy('date') as $prog)
-        <li class="py-2 flex justify-between items-center">
-          <div>
-            <p class="text-sm font-medium">
-              {{ \Carbon\Carbon::parse($prog->date)->format('d M Y') }}
-            </p>
-            <p class="text-gray-600 text-sm">{{ $prog->quantity_done }} pcs</p>
-          </div>
-          @if($prog->notes)
-            <p class="text-xs text-gray-500 italic">{{ $prog->notes }}</p>
-          @endif
-        </li>
-      @endforeach
-    </ul>
-  @else
-    <p class="text-gray-500">Belum ada update progress produksi.</p>
-  @endif
-</div>
-
-      {{-- Aksi Edit/Batalkan --}}
-      @unless($investment->approved)
-        <div class="flex space-x-2">
-          <a href="{{ route('investor.investments.edit', $investment) }}"
-             class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Edit
-          </a>
-          <form action="{{ route('investor.investments.destroy', $investment) }}"
-                method="POST"
-                onsubmit="return confirm('Batalkan investasi ini?');">
-            @csrf
-            @method('DELETE')
-            <button type="submit"
-                    class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-              Batalkan
-            </button>
-          </form>
-        </div>
-      @endunless
+      <!-- Modal untuk menampilkan bukti bayar -->
+      <div x-show="receiptModalOpen" @keydown.escape.window="receiptModalOpen = false" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;"><div class="flex items-center justify-center min-h-screen px-4 text-center"><div x-show="receiptModalOpen" @click.away="receiptModalOpen = false" x-transition class="fixed inset-0 transition-opacity" aria-hidden="true"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div><div x-show="receiptModalOpen" x-transition class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all my-8 max-w-lg w-full"><div class="bg-white p-4"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-medium text-gray-900">Bukti Pembayaran</h3><button @click="receiptModalOpen = false" class="text-gray-400 hover:text-gray-500"><x-heroicon-s-x-mark class="h-6 w-6"/></button></div><img :src="receiptImageUrl" alt="Bukti Pembayaran" class="w-full h-auto rounded"></div></div></div></div>
     </main>
   </div>
 </x-app-layout>

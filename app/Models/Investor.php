@@ -4,13 +4,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;  // jangan lupa import User model
+use Illuminate\Database\Eloquent\Factories\HasFactory; // Tambahkan ini
 
 class Investor extends Model
 {
+    use HasFactory; // Tambahkan ini jika belum ada
+
     protected $primaryKey = 'investor_id';
 
-    // Tambahkan 'user_id' di sini:
     protected $fillable = [
         'user_id',
         'name',
@@ -20,14 +21,25 @@ class Investor extends Model
         'registered_at',
     ];
 
+    protected $casts = [
+        'registered_at' => 'date',
+    ];
+
+    /**
+     * Relasi ke model User.
+     */
     public function user()
     {
-        // relasi ke User melalui user_id
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Cast tanggal
-protected $casts = [
-    'registered_at' => 'date',
-];
+    /**
+     * Relasi ke semua investasi yang dimiliki oleh investor ini.
+     * INI ADALAH PERBAIKAN UNTUK ERROR SAAT INI.
+     */
+    public function investments()
+    {
+        return $this->hasMany(Investment::class, 'investor_id', 'investor_id');
+    }
 }
+
