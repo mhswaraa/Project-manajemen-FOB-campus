@@ -53,7 +53,8 @@ class ProjectController extends Controller
             'price_per_piece'  => 'required|numeric|min:0',
             'quantity'         => 'required|integer|min:1',
             'profit'           => 'required|numeric|min:0',
-            'wage_per_piece'   => 'required|numeric|min:0', // Jangan lupa tambahkan ini jika sudah ada
+            'convection_profit'=> 'required|numeric|min:0', // <-- Tambahkan validasi
+            'wage_per_piece'   => 'required|numeric|min:0',
             'deadline'         => 'required|date|after_or_equal:today',
             'status'           => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
             'image'            => 'nullable|image|max:2048',
@@ -68,9 +69,8 @@ class ProjectController extends Controller
         return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil ditambahkan.');
     }
 
-    public function edit(Project $project)
+     public function edit(Project $project)
     {
-        // Eager load semua relasi yang dibutuhkan untuk performa
         $project->load([
             'investments' => function($query) {
                 $query->where('approved', true)->with('investor.user');
@@ -79,17 +79,16 @@ class ProjectController extends Controller
             'progress'
         ]);
 
-        // Hitung progres pendanaan
         $investedQty = $project->investments->sum('qty');
         $fundingPercentage = $project->quantity > 0 ? round(($investedQty / $project->quantity) * 100) : 0;
 
-        // Hitung progres produksi
         $completedQty = $project->progress->sum('quantity_done');
         $productionPercentage = $investedQty > 0 ? round(($completedQty / $investedQty) * 100) : 0;
         
-        // Hitung ringkasan keuangan proyek
+        // Kalkulasi data finansial
         $totalFunds = $project->investments->sum('amount');
-        $potentialProfit = $project->profit * $project->quantity;
+        $potentialInvestorProfit = $project->profit * $project->quantity;
+        $potentialConvectionProfit = $project->convection_profit * $project->quantity; // <-- KALKULASI BARU
         $totalWageCost = ($project->wage_per_piece ?? 0) * $project->quantity;
 
         return view('admin.projects.edit', compact(
@@ -99,7 +98,8 @@ class ProjectController extends Controller
             'completedQty',
             'productionPercentage',
             'totalFunds',
-            'potentialProfit',
+            'potentialInvestorProfit',
+            'potentialConvectionProfit', // <-- Kirim data baru ke view
             'totalWageCost'
         ));
     }
@@ -111,8 +111,9 @@ class ProjectController extends Controller
             'price_per_piece'  => 'required|numeric|min:0',
             'quantity'         => 'required|integer|min:1',
             'profit'           => 'required|numeric|min:0',
-            'wage_per_piece'   => 'required|numeric|min:0', // Jangan lupa tambahkan ini jika sudah ada
-            'deadline'         => 'required|date|after_or_equal:today',
+            'convection_profit'=> 'required|numeric|min:0', // <-- Tambahkan validasi
+            'wage_per_piece'   => 'required|numeric|min:0',
+            'deadline'         => 'required|date',
             'status'           => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
             'image'            => 'nullable|image|max:2048',
         ]);
