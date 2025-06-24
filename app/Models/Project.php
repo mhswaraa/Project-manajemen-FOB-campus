@@ -13,12 +13,13 @@ class Project extends Model
 {
 
     // Mass assignment
-    protected $fillable = [
+  protected $fillable = [
         'name',
         'price_per_piece',
+        'material_cost', // <-- TAMBAHKAN INI
         'quantity',
         'profit',
-        'convection_profit', // <-- TAMBAHKAN INI
+        'convection_profit',
         'wage_per_piece',
         'deadline',
         'status',
@@ -26,12 +27,14 @@ class Project extends Model
     ];
 
     // Casting untuk tipe numerik
-    protected $casts = [
-        'price_per_piece' => 'decimal:2',
-        'profit'          => 'decimal:2',
-        'quantity'        => 'integer',
+      protected $casts = [
+        'deadline' => 'datetime',
+        'price_per_piece' => 'float',
+        'material_cost' => 'float', // <-- TAMBAHKAN INI
+        'profit' => 'float',
+        'convection_profit' => 'float',
+        'wage_per_piece' => 'float',
     ];
-
     // Constants untuk status
     public const STATUS_ACTIVE   = 'active';
     public const STATUS_INACTIVE = 'inactive';

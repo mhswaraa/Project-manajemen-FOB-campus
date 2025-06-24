@@ -87,10 +87,15 @@ Route::middleware(['auth', 'role:admin'])
     // 3) Manajemen Penjahit (index, create, store, edit, update, destroy)
     Route::resource('penjahits', AdminPenjahitController::class)
          ->except(['show']);
+     
+     // TAMBAHKAN ROUTE BARU DI SINI
+    Route::get('projects/{project}', [AdminProjectController::class, 'show'])->name('projects.show');
+
 
       // 4) MANAJEMEN SPESIALISASI (BARU)
     Route::resource('specializations', \App\Http\Controllers\Admin\SpecializationController::class)
          ->except(['show', 'create', 'edit']);
+     
 
          // 5) HALAMAN LAPORAN (BARU)
     Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');

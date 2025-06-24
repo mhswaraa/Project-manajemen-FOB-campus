@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 class ProjectController extends Controller
 {
     
-    public function index()
+     public function index()
     {
         // Ambil semua proyek dan eager-load data agregat untuk performa
         $projects = Project::withSum(['investments as invested_qty' => function($q) {
@@ -51,9 +51,10 @@ class ProjectController extends Controller
         $data = $request->validate([
             'name'             => 'required|string|max:255',
             'price_per_piece'  => 'required|numeric|min:0',
+            'material_cost'    => 'required|numeric|min:0', // Validasi baru
             'quantity'         => 'required|integer|min:1',
             'profit'           => 'required|numeric|min:0',
-            'convection_profit'=> 'required|numeric|min:0', // <-- Tambahkan validasi
+            'convection_profit'=> 'required|numeric|min:0',
             'wage_per_piece'   => 'required|numeric|min:0',
             'deadline'         => 'required|date|after_or_equal:today',
             'status'           => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
@@ -85,10 +86,9 @@ class ProjectController extends Controller
         $completedQty = $project->progress->sum('quantity_done');
         $productionPercentage = $investedQty > 0 ? round(($completedQty / $investedQty) * 100) : 0;
         
-        // Kalkulasi data finansial
         $totalFunds = $project->investments->sum('amount');
         $potentialInvestorProfit = $project->profit * $project->quantity;
-        $potentialConvectionProfit = $project->convection_profit * $project->quantity; // <-- KALKULASI BARU
+        $potentialConvectionProfit = $project->convection_profit * $project->quantity;
         $totalWageCost = ($project->wage_per_piece ?? 0) * $project->quantity;
 
         return view('admin.projects.edit', compact(
@@ -99,7 +99,7 @@ class ProjectController extends Controller
             'productionPercentage',
             'totalFunds',
             'potentialInvestorProfit',
-            'potentialConvectionProfit', // <-- Kirim data baru ke view
+            'potentialConvectionProfit',
             'totalWageCost'
         ));
     }
@@ -109,9 +109,10 @@ class ProjectController extends Controller
         $data = $request->validate([
             'name'             => 'required|string|max:255',
             'price_per_piece'  => 'required|numeric|min:0',
+            'material_cost'    => 'required|numeric|min:0', // Validasi baru
             'quantity'         => 'required|integer|min:1',
             'profit'           => 'required|numeric|min:0',
-            'convection_profit'=> 'required|numeric|min:0', // <-- Tambahkan validasi
+            'convection_profit'=> 'required|numeric|min:0',
             'wage_per_piece'   => 'required|numeric|min:0',
             'deadline'         => 'required|date',
             'status'           => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
@@ -145,35 +146,27 @@ class ProjectController extends Controller
  */
     public function invested(Request $request)
     {
-        // 1. Ambil status tab dari query URL, defaultnya 'pending'
         $status = $request->query('status', 'pending');
-
-        // 2. Buat query dasar dengan relasi yang dibutuhkan
         $query = Investment::with(['investor.user', 'project'])->latest();
 
-        // 3. Terapkan filter berdasarkan tab yang aktif
         if ($status === 'approved') {
             $query->where('approved', true);
         } else {
-            // Selain itu, tampilkan yang 'pending' (approved = false)
             $query->where('approved', false);
         }
         
-         /** @var \Illuminate\Pagination\LengthAwarePaginator $investments */
-    $investments = $query->paginate(10)->withQueryString();
+        $investments = $query->paginate(10)->withQueryString();
 
-        // 5. Hitung statistik untuk kartu ringkasan
         $pendingCount = Investment::where('approved', false)->count();
         $approvedCount = Investment::where('approved', true)->count();
         $totalInvestedAmount = Investment::where('approved', true)->sum('amount');
 
-        // 6. Kirim semua data ke view
         return view('admin.projects.invested', compact(
             'investments',
             'pendingCount',
             'approvedCount',
             'totalInvestedAmount',
-            'status' // Kirim status untuk menandai tab aktif
+            'status'
         ));
     }
 
@@ -181,9 +174,45 @@ class ProjectController extends Controller
     {
         $investment->update(['approved' => true]);
 
-        // Redirect kembali ke tab pending untuk melanjutkan pekerjaan
         return redirect()
             ->route('admin.projects.invested', ['status' => 'pending'])
             ->with('success', 'Investasi ID #' . $investment->id . ' berhasil disetujui.');
+    }
+
+     /**
+     * Menampilkan halaman detail komprehensif untuk sebuah proyek.
+     */
+    public function show(Project $project)
+    {
+        $project->load([
+            'investments' => fn($q) => $q->where('approved', true)->with('investor.user'),
+            'assignments.tailor.user',
+            'assignments.progress'
+        ]);
+
+        $investedQty = $project->investments->sum('qty');
+        $fundingPercentage = $project->quantity > 0 ? round(($investedQty / $project->quantity) * 100) : 0;
+
+        $completedQty = $project->assignments->flatMap->progress->sum('quantity_done');
+        $productionPercentage = $investedQty > 0 ? round(($completedQty / $investedQty) * 100) : 0;
+        
+        $totalFunds = $project->investments->sum('amount');
+        $potentialInvestorProfit = $project->profit * $investedQty;
+        $potentialConvectionProfit = $project->convection_profit * $investedQty;
+        $totalWageCost = $project->wage_per_piece * $completedQty;
+        $netPotentialProfit = $potentialConvectionProfit - ($project->wage_per_piece * $investedQty);
+        
+        return view('admin.projects.show', compact(
+            'project',
+            'investedQty',
+            'fundingPercentage',
+            'completedQty',
+            'productionPercentage',
+            'totalFunds',
+            'potentialInvestorProfit',
+            'potentialConvectionProfit',
+            'totalWageCost',
+            'netPotentialProfit'
+        ));
     }
 }

@@ -83,12 +83,13 @@
                   </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a href="{{ route('admin.projects.edit', $project) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                <form action="{{ route('admin.projects.destroy', $project) }}" method="POST" class="inline-block ml-2" onsubmit="return confirm('Yakin ingin menghapus proyek ini? Ini tidak bisa dibatalkan.');">
-                  @csrf @method('DELETE')
-                  <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
-                </form>
-              </td>
+    <a href="{{ route('admin.projects.show', $project) }}" class="text-green-600 hover:text-green-900 mr-3">Detail</a>
+    <a href="{{ route('admin.projects.edit', $project) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+    <form action="{{ route('admin.projects.destroy', $project) }}" method="POST" class="inline-block ml-2" onsubmit="return confirm('Yakin ingin menghapus proyek ini? Ini tidak bisa dibatalkan.');">
+      @csrf @method('DELETE')
+      <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
+    </form>
+</td>
             </tr>
             @empty
             <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">Belum ada proyek yang dibuat. Silakan tambahkan proyek baru.</td></tr>
@@ -112,13 +113,33 @@
                 <div><x-input-label for="quantity" :value="__('Total Kuantitas (pcs)')" /><x-text-input id="quantity" name="quantity" type="number" class="mt-1 block w-full" :value="old('quantity')" required /><x-input-error :messages="$errors->get('quantity')" class="mt-1" /></div>
                 <div><x-input-label for="deadline" :value="__('Deadline')" /><x-text-input id="deadline" name="deadline" type="date" class="mt-1 block w-full" :value="old('deadline')" required /><x-input-error :messages="$errors->get('deadline')" class="mt-1" /></div>
             </div>
-             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div><x-input-label for="price_per_piece" :value="__('Modal/pcs')" /><x-text-input id="price_per_piece" name="price_per_piece" type="number" step="50" class="mt-1 block w-full" :value="old('price_per_piece')" required /><x-input-error :messages="$errors->get('price_per_piece')" class="mt-1" /></div>
-                <div><x-input-label for="profit" :value="__('Profit Investor/pcs')" /><x-text-input id="profit" name="profit" type="number" step="50" class="mt-1 block w-full" :value="old('profit')" required /><x-input-error :messages="$errors->get('profit')" class="mt-1" /></div>
-                {{-- INPUT BARU --}}
-                <div><x-input-label for="convection_profit" :value="__('Profit Konveksi/pcs')" /><x-text-input id="convection_profit" name="convection_profit" type="number" step="50" class="mt-1 block w-full" :value="old('convection_profit')" required /><x-input-error :messages="$errors->get('convection_profit')" class="mt-1" /></div>
-                <div><x-input-label for="wage_per_piece" :value="__('Upah Penjahit/pcs')" /><x-text-input id="wage_per_piece" name="wage_per_piece" type="number" step="50" class="mt-1 block w-full" :value="old('wage_per_piece')" required /><x-input-error :messages="$errors->get('wage_per_piece')" class="mt-1" /></div>
-            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div>
+        <x-input-label for="price_per_piece" :value="__('Modal Investor/pcs')" />
+        <x-text-input id="price_per_piece" name="price_per_piece" type="number" step="50" class="mt-1 block w-full" :value="old('price_per_piece', $project->price_per_piece ?? '')" required />
+        <x-input-error :messages="$errors->get('price_per_piece')" class="mt-1" />
+    </div>
+    <div>
+        <x-input-label for="material_cost" :value="__('Biaya Bahan/pcs')" />
+        <x-text-input id="material_cost" name="material_cost" type="number" step="50" class="mt-1 block w-full" :value="old('material_cost', $project->material_cost ?? '')" required />
+        <x-input-error :messages="$errors->get('material_cost')" class="mt-1" />
+    </div>
+     <div>
+        <x-input-label for="wage_per_piece" :value="__('Upah Jahit/pcs')" />
+        <x-text-input id="wage_per_piece" name="wage_per_piece" type="number" step="50" class="mt-1 block w-full" :value="old('wage_per_piece', $project->wage_per_piece ?? '')" required />
+        <x-input-error :messages="$errors->get('wage_per_piece')" class="mt-1" />
+    </div>
+    <div>
+        <x-input-label for="profit" :value="__('Profit Investor/pcs')" />
+        <x-text-input id="profit" name="profit" type="number" step="50" class="mt-1 block w-full" :value="old('profit', $project->profit ?? '')" required />
+        <x-input-error :messages="$errors->get('profit')" class="mt-1" />
+    </div>
+    <div>
+        <x-input-label for="convection_profit" :value="__('Profit Konveksi/pcs')" />
+        <x-text-input id="convection_profit" name="convection_profit" type="number" step="50" class="mt-1 block w-full" :value="old('convection_profit', $project->convection_profit ?? '')" required />
+        <x-input-error :messages="$errors->get('convection_profit')" class="mt-1" />
+    </div>
+</div>
             <div><x-input-label for="image" :value="__('Gambar Proyek (Opsional)')" /><input type="file" name="image" id="image" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"><x-input-error :messages="$errors->get('image')" class="mt-1" /></div>
           </div>
           <div class="mt-6 flex justify-end"><x-secondary-button x-on:click="$dispatch('close')">Batal</x-secondary-button><x-primary-button class="ml-3">Simpan Proyek</x-primary-button></div>
