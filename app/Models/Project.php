@@ -14,15 +14,16 @@ class Project extends Model
 
     // Mass assignment
     protected $fillable = [
-    'name',
-    'price_per_piece',
-    'quantity',
-    'profit',
-    'wage_per_piece', // <-- TAMBAHKAN INI
-    'deadline',
-    'status',
-    'image',
-];
+        'name',
+        'price_per_piece',
+        'quantity',
+        'profit',
+        'convection_profit', // <-- TAMBAHKAN INI
+        'wage_per_piece',
+        'deadline',
+        'status',
+        'image',
+    ];
 
     // Casting untuk tipe numerik
     protected $casts = [

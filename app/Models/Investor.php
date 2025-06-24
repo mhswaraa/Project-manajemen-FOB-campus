@@ -33,13 +33,21 @@ class Investor extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Relasi ke semua investasi yang dimiliki oleh investor ini.
-     * INI ADALAH PERBAIKAN UNTUK ERROR SAAT INI.
-     */
     public function investments()
     {
         return $this->hasMany(Investment::class, 'investor_id', 'investor_id');
+    }
+
+    public function payouts()
+    {
+        return $this->hasManyThrough(
+            Payout::class,       // Model akhir yang ingin diakses
+            Investment::class,   // Model perantara
+            'investor_id',       // Foreign key di tabel perantara (investments)
+            'investment_id',     // Foreign key di tabel akhir (payouts)
+            'investor_id',       // Local key di tabel awal (investors)
+            'id'                 // Local key di tabel perantara (investments)
+        );
     }
 }
 

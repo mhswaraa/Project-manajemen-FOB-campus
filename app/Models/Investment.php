@@ -14,13 +14,14 @@ class Investment extends Model
     // protected $primaryKey = 'id';
 
     protected $fillable = [
-        'investor_id',
         'project_id',
+        'investor_id',
         'qty',
         'amount',
-        'message',
         'receipt',
+        'message',
         'approved',
+        'profit_payout_status', // <-- TAMBAHKAN INI
     ];
 
     protected $casts = [
@@ -43,6 +44,11 @@ class Investment extends Model
     public function investor()
     {
         return $this->belongsTo(Investor::class, 'investor_id');
+    }
+
+     public function payout()
+    {
+        return $this->hasOne(Payout::class);
     }
 
     /**

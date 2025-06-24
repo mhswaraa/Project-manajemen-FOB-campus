@@ -12,12 +12,14 @@ use App\Http\Controllers\Admin\InvestorController     as AdminInvestorController
 use App\Http\Controllers\Admin\PenjahitController     as AdminPenjahitController;
 use App\Http\Controllers\Admin\ReportController      as AdminReportController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
+use App\Http\Controllers\Admin\PayoutController as AdminPayoutController;
 
 // Investor controllers
 use App\Http\Controllers\Investor\DashboardController  as InvestorDashboardController;
 use App\Http\Controllers\Investor\ProjectController    as InvestorProjectController;
 use App\Http\Controllers\Investor\InvestmentController as InvestorInvestmentController;
 use App\Http\Controllers\Investor\ProfileController    as InvestorProfileController;
+use App\Http\Controllers\Investor\PayoutController as InvestorPayoutController;
 
 // Penjahit controllers
 use App\Http\Controllers\Penjahit\DashboardController  as PenjahitDashboardController;
@@ -27,6 +29,9 @@ use App\Http\Controllers\Penjahit\ProgressController   as PenjahitProgressContro
 use App\Http\Controllers\Penjahit\ProfileController    as PenjahitProfileController;
 use App\Http\Controllers\Penjahit\PayrollController as PenjahitPayrollController;
 use App\Http\Controllers\Penjahit\InvoiceController as PenjahitInvoiceController;
+
+// CEO controllers
+use App\Http\Controllers\Ceo\ReportController as CeoReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,9 +96,13 @@ Route::middleware(['auth', 'role:admin'])
     Route::get('reports', [AdminReportController::class, 'index'])->name('reports.index');
 
      // GANTI RUTE PAYROLL LAMA DENGAN INI
-    Route::get('invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+     Route::get('invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
     Route::get('invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
     Route::post('invoices/{invoice}/pay', [AdminInvoiceController::class, 'pay'])->name('invoices.pay');
+
+     // 7) PEMBAYARAN PROFIT INVESTOR (BARU)
+    Route::get('payouts', [AdminPayoutController::class, 'index'])->name('payouts.index');
+    Route::post('payouts/{investment}', [AdminPayoutController::class, 'store'])->name('payouts.store');
 });
 
 
@@ -102,9 +111,21 @@ Route::middleware(['auth', 'role:admin'])
 | CEO Routes
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth','role:ceo'])
-     ->get('/ceo', [CeoController::class, 'index'])
-     ->name('ceo.dashboard');
+// Ganti rute lama dengan grup rute ini
+Route::middleware(['auth','role:ceo'])->prefix('ceo')->name('ceo.')->group(function () {
+    // Rute dasbor utama tetap ditangani oleh DashboardController
+    // Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Rute baru untuk laporan
+    Route::get('reports/investor-cohort', [CeoReportController::class, 'investorCohort'])->name('reports.investor-cohort');
+
+     // Rute baru untuk papan peringkat produksi
+    Route::get('reports/production-leaderboard', [CeoReportController::class, 'productionLeaderboard'])->name('reports.production-leaderboard');
+
+     // Rute baru untuk peramalan arus kas
+    Route::get('reports/cash-flow-forecast', [CeoReportController::class, 'cashFlowForecast'])->name('reports.cash-flow-forecast');
+});
+
 
 
 /*
@@ -148,6 +169,9 @@ Route::prefix('investor')
          ->name('profile');
     Route::post('profile', [InvestorProfileController::class, 'storeOrUpdate'])
          ->name('profile.update');
+
+     // 6) RIWAYAT PEMBAYARAN PROFIT (BARU)
+    Route::get('payouts', [InvestorPayoutController::class, 'index'])->name('payouts.index');
 });
 
 
@@ -162,8 +186,7 @@ Route::prefix('penjahit')
      ->group(function () {
 
     // 1) Dashboard
-    Route::get('dashboard', [PenjahitDashboardController::class, 'index'])
-         ->name('dashboard');
+    Route::get('dashboard', [PenjahitDashboardController::class, 'index'])->name('dashboard');
 
     // 2) Daftar Proyek Tersedia
     Route::get('projects', [PenjahitProjectController::class, 'index'])

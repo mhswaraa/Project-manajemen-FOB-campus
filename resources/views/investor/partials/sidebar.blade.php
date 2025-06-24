@@ -48,6 +48,18 @@
             </li>
 
             <li>
+                <a href="{{ route('investor.payouts.index') }}"
+                   @class([
+                       'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
+                       'bg-green-100 text-green-700' => request()->routeIs('investor.payouts.*'),
+                       'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('investor.payouts.*')
+                   ])>
+                    <x-heroicon-o-gift-top class="h-5 w-5" />
+                    Riwayat Profit
+                </a>
+            </li>
+
+            <li>
                 <a href="{{ route('investor.profile') }}"
                    @class([
                        'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',

@@ -80,6 +80,17 @@
                     Manajemen Invoice
                 </a>
             </li>
+            <li>
+                <a href="{{ route('admin.payouts.index') }}"
+                   @class([
+                       'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
+                       'bg-indigo-100 text-indigo-700' => request()->routeIs('admin.payouts.*'),
+                       'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.payouts.*')
+                   ])>
+                    <x-heroicon-o-gift class="h-5 w-5" />
+                    Pembayaran Profit
+                </a>
+            </li>
              <li>
                 <a href="{{ route('admin.reports.index') }}"
                    @class([
