@@ -155,7 +155,8 @@ class ProjectController extends Controller
             $query->where('approved', false);
         }
         
-        $investments = $query->paginate(10)->withQueryString();
+        // FIX: Mengganti withQueryString() dengan appends() untuk kompatibilitas linter
+        $investments = $query->paginate(10)->appends($request->query());
 
         $pendingCount = Investment::where('approved', false)->count();
         $approvedCount = Investment::where('approved', true)->count();

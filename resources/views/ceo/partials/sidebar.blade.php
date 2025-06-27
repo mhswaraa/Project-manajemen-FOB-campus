@@ -1,14 +1,19 @@
+
 {{-- resources/views/ceo/partials/sidebar.blade.php --}}
-<div class="w-64 bg-white border-r">
+<div class="flex h-screen w-64 flex-col justify-between border-e bg-white">
     <div class="px-4 py-6">
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-2 mb-6">
+        {{-- Logo dan Nama Panel --}}
+         <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-2 mb-6">
             <span class="grid h-10 w-10 place-content-center rounded-lg bg-gray-700 text-white">
                 <x-heroicon-s-user class="h-6 w-6"/>
             </span>
             <span class="text-xl font-bold text-gray-800">CEO Dashboard</span>
         </a>
+
+        {{-- Daftar Menu Utama --}}
         <ul class="space-y-1">
-            <li>
+            {{-- Menu Dropdown untuk Proyek --}}
+           <li>
                 <a href="{{ route('dashboard') }}" 
                    @class([
                        'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
@@ -49,17 +54,22 @@
                     <x-heroicon-o-presentation-chart-bar class="h-5 w-5" /> Peramalan & Proyeksi
                 </a>
             </li>
-            {{-- Tambahkan menu lain di sini jika perlu --}}
         </ul>
     </div>
+
+    {{-- Bagian Bawah: Profil Pengguna & Logout --}}
     <div class="sticky inset-x-0 bottom-0 border-t border-gray-100">
         <div class="flex items-center gap-3 bg-white p-4">
-            <img alt="Profil CEO" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=455A64&color=FFFFFF" class="h-10 w-10 rounded-full object-cover" />
+            <img alt="Profil Admin"
+                 src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=E8EAF6&color=3F51B5"
+                 class="h-10 w-10 rounded-full object-cover" />
             <div>
                 <p class="text-sm font-semibold text-gray-700">{{ Auth::user()->name }}</p>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="text-xs text-red-600 hover:underline focus:outline-none">Logout</button>
+                    <button type="submit" class="text-xs text-red-600 hover:underline focus:outline-none">
+                        Logout
+                    </button>
                 </form>
             </div>
         </div>

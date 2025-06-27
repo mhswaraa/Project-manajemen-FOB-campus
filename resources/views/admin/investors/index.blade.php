@@ -10,11 +10,6 @@
           <h1 class="text-3xl font-bold text-gray-800">Manajemen Investor</h1>
           <p class="text-gray-500 mt-1">Kelola semua investor yang terdaftar di platform Anda.</p>
         </div>
-        <button x-data @click.prevent="$dispatch('open-modal', 'add-investor-modal')"
-                class="mt-4 sm:mt-0 flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-          <x-heroicon-s-user-plus class="h-5 w-5"/>
-          Tambah Investor Baru
-        </button>
       </div>
 
       {{-- Pesan Sukses --}}

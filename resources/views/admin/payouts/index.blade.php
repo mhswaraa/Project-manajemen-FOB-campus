@@ -63,7 +63,11 @@
                       <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="flex-shrink-0 h-10 w-10"><img class="h-10 w-10 rounded-full object-cover" src="https://ui-avatars.com/api/?name={{ urlencode($payout->investment->investor->user->name) }}&background=E8EAF6&color=3F51B5" alt=""></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">{{ $payout->investment->investor->user->name }}</div></div></div></td>
                       <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-bold text-gray-900">Rp {{ number_format($payout->profit_amount, 0, ',', '.') }}</div><div class="text-sm text-gray-500">Proyek: {{ $payout->investment->project->name }}</div><div class="text-sm text-gray-500">Tgl Bayar: {{ $payout->payment_date->format('d M Y') }}</div></td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $payout->processor->name }}</td>
-                      <td class="px-6 py-4 whitespace-nowrap text-center">@if ($payout->receipt_path)<button @click="receiptModalOpen = true; receiptImageUrl = '{{ asset('storage/' . $payout->receipt_path) }}'" class="px-3 py-1 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-full hover:bg-indigo-200">Lihat</button>@else<span class="text-xs text-gray-400 italic">-</span>@endif</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <a href="{{ route('admin.payouts.show', $payout) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                        Detail
+                      </a>
+                    </td>
                     </tr>
                     @empty
                     <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Belum ada riwayat pembayaran yang tercatat.</td></tr>

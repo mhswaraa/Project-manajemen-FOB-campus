@@ -1,107 +1,211 @@
 <x-app-layout>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{-- Penambahan Chart.js dari CDN --}}
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    @endpush
 
-  <div class="flex h-screen bg-gray-100">
-    @include('ceo.partials.sidebar')
+    <div class="flex h-screen bg-gray-100">
+        @include('ceo.partials.sidebar')
 
-    <main class="flex-1 overflow-y-auto p-6 lg:p-8">
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Peramalan Arus Kas</h1>
-            <p class="text-gray-500 mt-1">Memproyeksikan arus kas masuk dan keluar untuk perencanaan strategis.</p>
-        </div>
-
-        @php
-            // Hitung total untuk KPI Cards (3 bulan ke depan)
-            $totalProjectedIn = $forecastData->take(3)->sum('funds_in');
-            $totalProjectedOut = $forecastData->take(3)->sum(fn($data) => $data['wage_out'] + $data['profit_out']);
-            $netProjectedFlow = $totalProjectedIn - $totalProjectedOut;
-        @endphp
-
-        {{-- Kartu KPI Peramalan --}}
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow-md"><p class="text-sm font-medium text-gray-500">Proyeksi Dana Masuk (3 Bln)</p><p class="text-3xl font-bold text-blue-600 mt-1">Rp {{ number_format($totalProjectedIn, 0,',','.') }}</p></div>
-            <div class="bg-white p-6 rounded-lg shadow-md"><p class="text-sm font-medium text-gray-500">Proyeksi Dana Keluar (3 Bln)</p><p class="text-3xl font-bold text-red-600 mt-1">Rp {{ number_format($totalProjectedOut, 0,',','.') }}</p></div>
-            <div class="bg-white p-6 rounded-lg shadow-md"><p class="text-sm font-medium text-gray-500">Proyeksi Arus Kas Bersih (3 Bln)</p><p class="text-3xl font-bold mt-1 {{ $netProjectedFlow >= 0 ? 'text-gray-800' : 'text-red-600' }}">Rp {{ number_format($netProjectedFlow, 0,',','.') }}</p></div>
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-5 gap-8">
-            {{-- Grafik Peramalan --}}
-            <div class="xl:col-span-3 bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Grafik Proyeksi Arus Kas (6 Bulan ke Depan)</h3>
-                @if($forecastData->isNotEmpty())
-                    <div class="h-96">
-                        <canvas id="cashFlowChart"></canvas>
-                    </div>
-                @else
-                    <div class="text-center py-16 text-gray-500">Tidak ada data untuk peramalan.</div>
-                @endif
-            </div>
-
-            {{-- Tabel Rincian --}}
-            <div class="xl:col-span-2 bg-white shadow-md rounded-lg">
-                <div class="p-4 border-b"><h3 class="font-semibold text-gray-700">Rincian Proyeksi per Bulan</h3></div>
-                <div class="max-h-[28rem] overflow-y-auto">
-                    @forelse ($forecastData as $data)
-                        @php
-                            $cashOut = $data['wage_out'] + $data['profit_out'];
-                            $netFlow = $data['funds_in'] - $cashOut;
-                        @endphp
-                        <div class="p-4 border-b">
-                            <h4 class="font-bold text-gray-800">{{ $data['month_name'] }}</h4>
-                            <dl class="mt-2 space-y-1 text-sm">
-                                <div class="flex justify-between"><dt class="text-gray-500">Dana Masuk</dt><dd class="font-medium text-blue-600">+ Rp {{ number_format($data['funds_in'], 0,',','.') }}</dd></div>
-                                <div class="flex justify-between"><dt class="text-gray-500">Biaya Upah</dt><dd class="font-medium text-orange-600">- Rp {{ number_format($data['wage_out'], 0,',','.') }}</dd></div>
-                                <div class="flex justify-between"><dt class="text-gray-500">Pembayaran Profit</dt><dd class="font-medium text-red-600">- Rp {{ number_format($data['profit_out'], 0,',','.') }}</dd></div>
-                                <div class="flex justify-between pt-2 border-t font-bold"><dt class="text-gray-800">Arus Kas Bersih</dt><dd class="{{ $netFlow >= 0 ? 'text-gray-900' : 'text-red-600' }}">Rp {{ number_format($netFlow, 0,',','.') }}</dd></div>
-                            </dl>
-                        </div>
-                    @empty
-                        <div class="p-8 text-center text-gray-500">Tidak ada data untuk ditampilkan.</div>
-                    @endforelse
+        <main class="flex-1 overflow-y-auto p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Perkiraan Arus Kas</h1>
+                    <p class="text-gray-500 mt-1">Analisis pemasukan, pengeluaran, dan profitabilitas bulanan.</p>
                 </div>
             </div>
-        </div>
-    </main>
-  </div>
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const ctx = document.getElementById('cashFlowChart');
-        @if($forecastData->isNotEmpty())
-        if (ctx) {
+
+            {{-- Kartu Metrik Utama --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                 <div class="bg-white p-5 rounded-xl shadow">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-green-100 text-green-600 p-3 rounded-full"><x-heroicon-o-arrow-trending-up class="w-6 h-6"/></div>
+                        <div>
+                            <p class="text-sm text-gray-500">Total Pemasukan</p>
+                            <p class="text-2xl font-bold text-gray-800">Rp {{ number_format($totalIncome, 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-red-100 text-red-600 p-3 rounded-full"><x-heroicon-o-arrow-trending-down class="w-6 h-6"/></div>
+                        <div>
+                            <p class="text-sm text-gray-500">Total Pengeluaran</p>
+                            <p class="text-2xl font-bold text-gray-800">Rp {{ number_format($totalExpenses, 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                </div>
+                 <div class="bg-white p-5 rounded-xl shadow">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-blue-100 text-blue-600 p-3 rounded-full"><x-heroicon-o-scale class="w-6 h-6"/></div>
+                        <div>
+                            <p class="text-sm text-gray-500">Arus Kas Bersih</p>
+                            <p class="text-2xl font-bold {{ $totalNetCashFlow >= 0 ? 'text-gray-800' : 'text-red-600' }}">Rp {{ number_format($totalNetCashFlow, 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow">
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-yellow-100 text-yellow-600 p-3 rounded-full"><x-heroicon-o-chart-pie class="w-6 h-6"/></div>
+                        <div>
+                            <p class="text-sm text-gray-500">Total Profit Konveksi</p>
+                            <p class="text-2xl font-bold text-gray-800">Rp {{ number_format($totalConvectionProfit, 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Grafik Arus Kas --}}
+            <div class="bg-white rounded-xl shadow p-6 mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Grafik Arus Kas Bulanan</h3>
+                <div class="h-96">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+
+            {{-- Tabel Rincian Arus Kas --}}
+            <div class="bg-white rounded-xl shadow overflow-hidden">
+                <div class="p-6">
+                     <h3 class="text-lg font-semibold text-gray-900">Rincian Arus Kas Bulanan</h3>
+                     <p class="text-sm text-gray-500">Data dikelompokkan berdasarkan bulan transaksi.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bulan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase text-green-600">Pemasukan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase text-red-600">Pengeluaran</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase text-blue-600">Arus Kas Bersih</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase text-yellow-800">Profit Konveksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse ($forecastData as $data)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">{{ $data['month'] }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-semibold">+ Rp {{ number_format($data['income'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <span class="text-red-700 font-semibold">- Rp {{ number_format($data['expenses'], 0, ',', '.') }}</span>
+                                    <div class="text-xs text-gray-400">
+                                        Bahan: {{number_format($data['material_cost'], 0, ',', '.')}} | Upah: {{number_format($data['wage_cost'], 0, ',', '.')}} | Investor: {{number_format($data['investor_payout'], 0, ',', '.')}}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold {{ $data['net_cash_flow'] >= 0 ? 'text-blue-800' : 'text-red-800' }}">
+                                    Rp {{ number_format($data['net_cash_flow'], 0, ',', '.') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-yellow-900">
+                                    Rp {{ number_format($data['convection_profit'], 0, ',', '.') }}
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">Tidak ada data transaksi untuk ditampilkan.</td></tr>
+                            @endforelse
+                        </tbody>
+                         <tfoot class="bg-gray-50">
+                            <tr class="font-bold text-gray-800">
+                                <td class="px-6 py-4 text-sm">Total</td>
+                                <td class="px-6 py-4 text-sm text-green-700">+ Rp {{ number_format($totalIncome, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-sm text-red-700">- Rp {{ number_format($totalExpenses, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-sm {{ $totalNetCashFlow >= 0 ? 'text-blue-800' : 'text-red-800' }}">Rp {{ number_format($totalNetCashFlow, 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-sm text-yellow-900">Rp {{ number_format($totalConvectionProfit, 0, ',', '.') }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    {{-- Skrip untuk inisialisasi Chart.js --}}
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('cashFlowChart').getContext('2d');
+            
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: {!! json_encode($forecastData->pluck('month_name')) !!},
+                    labels: @json($chartLabels),
                     datasets: [
                         {
-                            label: 'Dana Masuk (Rp)',
-                            data: {!! json_encode($forecastData->pluck('funds_in')) !!},
-                            backgroundColor: 'rgba(59, 130, 246, 0.6)', // Blue
-                            borderColor: 'rgba(59, 130, 246, 1)',
-                            borderWidth: 1
+                            type: 'line',
+                            label: 'Arus Kas Bersih',
+                            data: @json($chartNetFlowData),
+                            borderColor: '#3B82F6', // blue-500
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#3B82F6',
+                            yAxisID: 'y',
                         },
                         {
-                            label: 'Dana Keluar (Rp)',
-                            data: {!! json_encode($forecastData->map(fn($d) => $d['wage_out'] + $d['profit_out'])) !!},
-                            backgroundColor: 'rgba(239, 68, 68, 0.6)', // Red
-                            borderColor: 'rgba(239, 68, 68, 1)',
-                            borderWidth: 1
+                            type: 'line',
+                            label: 'Profit Konveksi',
+                            data: @json($chartProfitData),
+                            borderColor: '#F59E0B', // amber-500
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointBackgroundColor: '#F59E0B',
+                            yAxisID: 'y',
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Pemasukan',
+                            data: @json($chartIncomeData),
+                            backgroundColor: '#10B981', // green-500
+                            borderRadius: 4,
+                            yAxisID: 'y',
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Pengeluaran',
+                            data: @json($chartExpensesData),
+                            backgroundColor: '#EF4444', // red-500
+                            borderRadius: 4,
+                            yAxisID: 'y',
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
-                    scales: { 
-                        x: { stacked: false },
-                        y: { stacked: false, beginAtZero: true, ticks: { callback: value => 'Rp ' + new Intl.NumberFormat('id-ID').format(value) } } 
-                    }
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    return 'Rp ' + value.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += 'Rp ' + context.parsed.y.toLocaleString('id-ID');
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
                 }
             });
-        }
-        @endif
-    });
-  </script>
+        });
+    </script>
+    @endpush
 </x-app-layout>

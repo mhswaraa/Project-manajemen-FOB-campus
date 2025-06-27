@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Invoice;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf; // <-- IMPORT PUSTAKA PDF
+use Illuminate\Support\Str; // <-- IMPORT CLASS Str UNTUK MEMBUAT SLUG
+use Illuminate\Support\Facades\Storage; // <-- IMPORT FACADE STORAGE
 
 class InvoiceController extends Controller
 {
@@ -30,42 +32,59 @@ class InvoiceController extends Controller
         return view('admin.invoices.index', compact('invoices', 'tab'));
     }
 
-    /**
-     * Menampilkan detail satu invoice dan form pembayaran.
-     */
-    public function show(Invoice $invoice)
+     public function show(Invoice $invoice)
     {
-        $invoice->load(['tailor.user', 'progressItems.assignment.project', 'processor']);
-        
+        $invoice->load('tailor.user', 'progressItems.assignment.project', 'processor');
         return view('admin.invoices.show', compact('invoice'));
     }
 
-    /**
-     * Memproses pembayaran untuk sebuah invoice.
-     */
-    public function pay(Request $request, Invoice $invoice)
+     public function pay(Request $request, Invoice $invoice)
     {
-        // Hanya proses jika status masih pending
-        if ($invoice->status !== 'pending') {
-            return back()->with('error', 'Invoice ini sudah pernah diproses sebelumnya.');
-        }
-
         $request->validate([
-            'receipt' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'notes'   => 'nullable|string',
+            'receipt' => 'required|image|max:2048',
         ]);
 
-        $receiptPath = $request->file('receipt')->store('invoice_receipts', 'public');
+        $receiptPath = $request->file('receipt')->store('receipts', 'public');
 
         $invoice->update([
             'status' => 'paid',
             'payment_date' => now(),
+            'processed_by' => auth()->id(),
             'receipt_path' => $receiptPath,
-            'processed_by_user_id' => Auth::id(),
-            // notes bisa ditambahkan jika diperlukan
         ]);
 
-        return redirect()->route('admin.invoices.index', ['tab' => 'paid'])
-                         ->with('success', 'Pembayaran untuk invoice ' . $invoice->invoice_number . ' berhasil dicatat.');
+        return redirect()->route('admin.invoices.show', $invoice)->with('success', 'Invoice telah berhasil ditandai lunas.');
+    }
+
+
+    /**
+     * Membuat dan mengunduh faktur dalam format PDF.
+     */
+    public function downloadPDF(Invoice $invoice)
+    {
+        // Load data yang dibutuhkan
+        $invoice->load('tailor.user', 'progressItems.assignment.project');
+
+        $data = ['invoice' => $invoice];
+
+        // == PENAMBAHAN: LOGIKA UNTUK GAMBAR BUKTI TRANSFER ==
+        // Cek jika invoice sudah lunas dan ada path bukti transfer
+        if ($invoice->status == 'paid' && $invoice->receipt_path) {
+            // Cek apakah file benar-benar ada di storage
+            if (Storage::disk('public')->exists($invoice->receipt_path)) {
+                // Dapatkan path absolut dari file untuk disematkan ke PDF
+                $data['receiptImagePath'] = storage_path('app/public/' . $invoice->receipt_path);
+            }
+        }
+
+        // Render view 'pdf' dengan data invoice (dan path gambar jika ada)
+        $pdf = PDF::loadView('admin.invoices.pdf', $data);
+
+        // Membuat nama file baru
+        $tailorName = Str::slug($invoice->tailor->user->name, '-');
+        $fileName = $tailorName . '-INV-' . $invoice->invoice_number . '.pdf';
+
+        // Memulai download
+        return $pdf->download($fileName);
     }
 }

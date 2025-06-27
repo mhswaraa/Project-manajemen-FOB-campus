@@ -18,6 +18,7 @@ class Investor extends Model
         'email',
         'phone',
         'amount',
+        'gdrive_link', // <-- Tambahkan ini
         'registered_at',
     ];
 

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Investment;
-use App\Models\Project;
-use App\Models\Payout; // Import model Payout
+use App\Models\Payout;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class PayoutController extends Controller
 {
@@ -17,36 +19,24 @@ class PayoutController extends Controller
      */
     public function index(Request $request)
     {
-        $tab = $request->query('tab', 'unpaid'); // Default tab adalah 'unpaid'
+        $tab = $request->query('tab', 'unpaid');
 
         $payoutsReady = collect();
         $payoutHistory = collect();
 
         if ($tab === 'unpaid') {
-            // --- Logika untuk Tab "Siap Dibayar" ---
-            $projects = Project::with([
-                'investments' => function($query) {
-                    $query->where('approved', true)->where('profit_payout_status', 'unpaid');
-                },
-                'investments.investor.user',
-                'assignments',
-                'progress'
-            ])->get();
+            $payoutsReady = Investment::where('approved', true)
+                ->where('profit_payout_status', 'unpaid')
+                ->whereHas('project', function ($query) {
+                    $query->whereRaw('(SELECT SUM(quantity_done) FROM tailor_progress tp JOIN project_tailor pt ON tp.project_tailor_id = pt.id WHERE pt.project_id = projects.id) >= projects.quantity');
+                })
+                ->with('investor.user', 'project')
+                ->get();
 
-            $completedProjects = $projects->filter(function ($project) {
-                $totalAssigned = $project->assignments->sum('assigned_qty');
-                $totalCompleted = $project->progress->sum('quantity_done');
-                return $totalAssigned > 0 && $totalCompleted >= $totalAssigned;
-            });
-
-            $payoutsReady = $completedProjects->flatMap(fn($project) => $project->investments);
-
-        } else { // tab === 'history'
-            // --- Logika untuk Tab "Riwayat Pembayaran" ---
+        } else {
             $query = Payout::with(['investment.project', 'investment.investor.user', 'processor'])
-                                ->latest('payment_date');
+                           ->latest('payment_date');
             
-            /** @var \Illuminate\Pagination\LengthAwarePaginator $payoutHistory */ // <-- INI ADALAH PERBAIKANNYA
             $payoutHistory = $query->paginate(15)->withQueryString();
         }
 
@@ -54,7 +44,7 @@ class PayoutController extends Controller
     }
 
     /**
-     * Menyimpan data pembayaran profit (payout).
+     * Menyimpan data pembayaran profit baru.
      */
     public function store(Request $request, Investment $investment)
     {
@@ -66,26 +56,57 @@ class PayoutController extends Controller
             'receipt' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'notes' => 'nullable|string',
         ]);
-
-        $receiptPath = $request->file('receipt')->store('payout_receipts', 'public');
+        
+        // FIX: Menghitung total pembayaran (Modal Awal + Profit)
         $profitAmount = $investment->qty * $investment->project->profit;
+        $totalPayoutAmount = $investment->amount + $profitAmount; // Ini adalah jumlah total yang dibayarkan
+        
+        $receiptPath = $request->file('receipt')->store('payout_receipts', 'public');
 
-        DB::transaction(function () use ($investment, $receiptPath, $profitAmount, $request) {
-            // 1. Buat record di tabel payouts
-            $investment->payout()->create([
-                'profit_amount' => $profitAmount,
+        DB::transaction(function () use ($investment, $receiptPath, $totalPayoutAmount, $request) {
+            Payout::create([
+                'investment_id' => $investment->id,
+                'amount' => $totalPayoutAmount, // <-- Menggunakan nilai total pembayaran
                 'payment_date' => now(),
                 'receipt_path' => $receiptPath,
                 'notes' => $request->notes,
-                'processed_by_user_id' => Auth::id(),
+                'processed_by' => Auth::id(),
             ]);
 
-            // 2. Update status pembayaran profit di tabel investments
             $investment->update(['profit_payout_status' => 'paid']);
         });
 
-        // Redirect kembali ke tab "Siap Dibayar"
         return redirect()->route('admin.payouts.index', ['tab' => 'unpaid'])
                          ->with('success', 'Pembayaran profit berhasil dicatat.');
+    }
+
+    /**
+     * Menampilkan halaman detail untuk sebuah payout.
+     */
+    public function show(Payout $payout)
+    {
+        $payout->load('investment.investor.user', 'investment.project', 'processor');
+        return view('admin.payouts.show', compact('payout'));
+    }
+    
+    /**
+     * Membuat dan menyediakan file PDF untuk diunduh.
+     */
+    public function downloadPDF(Payout $payout)
+    {
+        $payout->load('investment.investor.user', 'investment.project', 'processor');
+        
+        $data = ['payout' => $payout];
+
+        if ($payout->receipt_path && Storage::disk('public')->exists($payout->receipt_path)) {
+            $data['receiptImagePath'] = storage_path('app/public/' . $payout->receipt_path);
+        }
+        
+        $pdf = PDF::loadView('admin.payouts.pdf', $data);
+
+        $investorName = Str::slug($payout->investment->investor->user->name, '-');
+        $fileName = 'bukti-bayar-profit-' . $investorName . '-ref' . $payout->id . '.pdf';
+
+        return $pdf->download($fileName);
     }
 }

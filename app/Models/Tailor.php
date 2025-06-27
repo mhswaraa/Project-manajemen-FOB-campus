@@ -4,14 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Tailor extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'tailor_id';
-
     protected $table = 'penjahits';
+    protected $primaryKey = 'tailor_id';
 
     protected $fillable = [
         'user_id',
@@ -19,11 +19,12 @@ class Tailor extends Model
         'phone',
         'email',
         'status',
+        'gdrive_link', // <-- Tambahkan ini
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class);
     }
     
     public function assignments()

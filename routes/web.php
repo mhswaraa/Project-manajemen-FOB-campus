@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\PenjahitController     as AdminPenjahitController
 use App\Http\Controllers\Admin\ReportController      as AdminReportController;
 use App\Http\Controllers\Admin\InvoiceController as AdminInvoiceController;
 use App\Http\Controllers\Admin\PayoutController as AdminPayoutController;
+use App\Http\Controllers\Admin\UserController; // <-- Import UserController
 
 // Investor controllers
 use App\Http\Controllers\Investor\DashboardController  as InvestorDashboardController;
@@ -68,6 +69,10 @@ Route::middleware(['auth', 'role:admin'])
      ->name('admin.')
      ->group(function () {
 
+     // == PENAMBAHAN ROUTE BARU ==
+    // 1) Manajemen User (Fitur baru yang terpusat)
+    Route::resource('users', UserController::class);
+
     // 1) Manajemen Proyek (index, store, edit, update, destroy)
     Route::resource('projects', AdminProjectController::class)
          ->only(['index','store','edit','update','destroy']);
@@ -108,6 +113,19 @@ Route::middleware(['auth', 'role:admin'])
      // 7) PEMBAYARAN PROFIT INVESTOR (BARU)
     Route::get('payouts', [AdminPayoutController::class, 'index'])->name('payouts.index');
     Route::post('payouts/{investment}', [AdminPayoutController::class, 'store'])->name('payouts.store');
+
+    // == FIX: MENGGABUNGKAN SEMUA ROUTE INVOICE MENJADI SATU BLOK ==
+    Route::get('invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');
+    Route::get('invoices/{invoice}', [AdminInvoiceController::class, 'show'])->name('invoices.show');
+    Route::post('invoices/{invoice}/pay', [AdminInvoiceController::class, 'pay'])->name('invoices.pay');
+    Route::get('invoices/{invoice}/download', [AdminInvoiceController::class, 'downloadPDF'])->name('invoices.download');
+
+    // Payouts
+    Route::get('payouts', [AdminPayoutController::class, 'index'])->name('payouts.index');
+    Route::post('payouts/{investment}', [AdminPayoutController::class, 'store'])->name('payouts.store');
+    // == FIX: MENAMBAHKAN ROUTE UNTUK HALAMAN DETAIL PAYOUT ==
+    Route::get('payouts/{payout}', [AdminPayoutController::class, 'show'])->name('payouts.show');
+    Route::get('payouts/{payout}/download', [AdminPayoutController::class, 'downloadPDF'])->name('payouts.download');
 });
 
 

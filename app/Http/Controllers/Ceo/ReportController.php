@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Ceo;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
+use App\Models\Investment;
+use App\Models\Payroll;
+use App\Models\Payout;
 use App\Models\Project;
 use App\Models\Tailor;
-use App\Models\Investment; // Import Investment
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -152,49 +154,84 @@ class ReportController extends Controller
    /**
      * (DIROMBAK) Menampilkan halaman peramalan arus kas (Cash Flow Forecast).
      */
-    public function cashFlowForecast()
+   public function cashFlowForecast(Request $request)
     {
-        $forecastMonths = 6; // Kita akan meramalkan untuk 6 bulan ke depan
-        $monthlyForecast = [];
+        $investments = Investment::where('approved', true)->with('project')->get();
+        $payrolls = Payroll::whereNotNull('payment_date')->get();
+        $payouts = Payout::all();
 
-        // 1. Hitung rata-rata dana masuk per bulan dari 3 bulan terakhir sebagai dasar proyeksi
-        $averageMonthlyFunds = Investment::where('approved', true)
-            ->where('created_at', '>=', Carbon::now()->subMonths(3))
-            ->sum('amount') / 3;
+        $monthlyData = [];
 
-        for ($i = 0; $i < $forecastMonths; $i++) {
-            $month = Carbon::now()->addMonths($i);
-            $monthKey = $month->format('Y-m-01');
+        foreach ($investments as $investment) {
+            $month = Carbon::parse($investment->created_at)->format('Y-m');
+            if (!isset($monthlyData[$month])) $this->initializeMonth($monthlyData, $month);
+            $monthlyData[$month]['income'] += $investment->amount;
+            $monthlyData[$month]['material_cost'] += $investment->project->material_cost * $investment->qty;
+            $monthlyData[$month]['convection_profit'] += $investment->project->convection_profit * $investment->qty;
+        }
 
-            // Inisialisasi data bulan ini
-            $monthlyForecast[$monthKey] = [
-                'month_name' => $month->isoFormat('MMMM Y'),
-                'funds_in' => 0,
-                'wage_out' => 0,
-                'profit_out' => 0,
+        foreach ($payrolls as $payroll) {
+            $month = Carbon::parse($payroll->payment_date)->format('Y-m');
+            if (!isset($monthlyData[$month])) $this->initializeMonth($monthlyData, $month);
+            $monthlyData[$month]['wage_cost'] += $payroll->amount;
+        }
+
+        foreach ($payouts as $payout) {
+            $month = Carbon::parse($payout->payment_date)->format('Y-m');
+            if (!isset($monthlyData[$month])) $this->initializeMonth($monthlyData, $month);
+            $monthlyData[$month]['investor_payout'] += $payout->amount;
+        }
+
+        ksort($monthlyData);
+
+        $forecastData = [];
+        foreach ($monthlyData as $month => $data) {
+            $totalExpenses = $data['material_cost'] + $data['wage_cost'] + $data['investor_payout'];
+            $netCashFlow = $data['income'] - $totalExpenses;
+            
+            $forecastData[] = [ // Using array_push style
+                'month' => Carbon::createFromFormat('Y-m', $month)->isoFormat('MMMM YYYY'),
+                'income' => $data['income'],
+                'expenses' => $totalExpenses,
+                'material_cost' => $data['material_cost'],
+                'wage_cost' => $data['wage_cost'],
+                'investor_payout' => $data['investor_payout'],
+                'net_cash_flow' => $netCashFlow,
+                'convection_profit' => $data['convection_profit'],
             ];
-
-            // 2. Proyeksi Dana Masuk (berdasarkan rata-rata)
-            $monthlyForecast[$monthKey]['funds_in'] = $averageMonthlyFunds;
-
-            // 3. Proyeksi Pengeluaran (Upah & Profit) berdasarkan deadline proyek
-            $projectsDueThisMonth = Project::where('status', 'active')
-                ->whereYear('deadline', $month->year)
-                ->whereMonth('deadline', $month->month)
-                ->with(['investments' => fn($q) => $q->where('approved', true)->where('profit_payout_status', 'unpaid')])
-                ->get();
-
-            foreach ($projectsDueThisMonth as $project) {
-                // Total upah untuk proyek ini
-                $monthlyForecast[$monthKey]['wage_out'] += $project->quantity * $project->wage_per_piece;
-                // Total profit untuk proyek ini
-                $monthlyForecast[$monthKey]['profit_out'] += $project->quantity * $project->profit;
-            }
         }
         
-        // Konversi ke collection untuk kemudahan di view
-        $forecastData = collect($monthlyForecast);
+        $totalIncome = array_sum(array_column($forecastData, 'income'));
+        $totalExpenses = array_sum(array_column($forecastData, 'expenses'));
+        $totalNetCashFlow = array_sum(array_column($forecastData, 'net_cash_flow'));
+        $totalConvectionProfit = array_sum(array_column($forecastData, 'convection_profit'));
 
-        return view('ceo.reports.cash-flow-forecast', compact('forecastData'));
+        // PENAMBAHAN: Menyiapkan data untuk Chart.js
+        $chartLabels = array_column($forecastData, 'month');
+        $chartIncomeData = array_column($forecastData, 'income');
+        $chartExpensesData = array_column($forecastData, 'expenses');
+        $chartNetFlowData = array_column($forecastData, 'net_cash_flow');
+        $chartProfitData = array_column($forecastData, 'convection_profit');
+
+        return view('ceo.reports.cash-flow-forecast', compact(
+            'forecastData', 
+            'totalIncome', 
+            'totalExpenses', 
+            'totalNetCashFlow', 
+            'totalConvectionProfit',
+            'chartLabels',
+            'chartIncomeData',
+            'chartExpensesData',
+            'chartNetFlowData',
+            'chartProfitData'
+        ));
+    }
+
+    private function initializeMonth(&$data, $month)
+    {
+        $data[$month] = [
+            'income' => 0, 'material_cost' => 0, 'wage_cost' => 0,
+            'investor_payout' => 0, 'convection_profit' => 0,
+        ];
     }
 }
