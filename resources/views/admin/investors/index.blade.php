@@ -40,6 +40,8 @@
             <tr>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kontak</th>
+              {{-- PERBAIKAN: Menambahkan kolom MOU --}}
+              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status MOU</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktivitas Investasi</th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bergabung Pada</th>
               <th scope="col" class="relative px-6 py-3"><span class="sr-only">Aksi</span></th>
@@ -63,6 +65,20 @@
                 <div class="text-sm text-gray-900">{{ $user->email }}</div>
                 <div class="text-sm text-gray-500">{{ $user->investor->phone ?? '-' }}</div>
               </td>
+              {{-- PERBAIKAN: Menampilkan status MOU --}}
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                @if($user->investor && $user->investor->mou_path)
+                    <a href="{{ Storage::url($user->investor->mou_path) }}" target="_blank" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200">
+                        <x-heroicon-s-check-circle class="h-4 w-4 mr-1"/>
+                        Sudah Diunggah
+                    </a>
+                @else
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <x-heroicon-s-x-circle class="h-4 w-4 mr-1"/>
+                        Belum Ada
+                    </span>
+                @endif
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm text-gray-900">Rp {{ number_format($user->investments_sum_amount ?? 0, 0, ',', '.') }}</div>
                 <div class="text-sm text-gray-500">{{ $user->investments_count }} Proyek</div>
@@ -75,7 +91,7 @@
               </td>
             </tr>
             @empty
-            <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500">Tidak ada investor yang ditemukan.</td></tr>
+            <tr><td colspan="6" class="px-6 py-12 text-center text-gray-500">Tidak ada investor yang ditemukan.</td></tr>
             @endforelse
           </tbody>
         </table>

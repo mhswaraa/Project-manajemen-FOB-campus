@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Bukti Pembayaran #{{ $payout->id }}</title>
     <style>
-        @page {
-            margin: 0cm;
-        }
+        @page { margin: 0cm; }
         body {
             font-family: 'Helvetica', sans-serif;
             color: #333;
@@ -16,9 +13,7 @@
             margin: 2.5cm;
             position: relative;
         }
-        .container {
-            width: 100%;
-        }
+        .container { width: 100%; }
         .header h1 {
             margin: 0;
             font-size: 28px;
@@ -31,20 +26,13 @@
             font-size: 20px;
             font-weight: bold;
         }
-        .details p {
-            margin: 0;
-            line-height: 1.4;
-        }
+        .details p { margin: 0; line-height: 1.4; }
         table.info-table {
             width: 100%;
             border: none;
             margin-bottom: 30px;
         }
-        table.info-table td {
-            border: none;
-            padding: 0;
-            vertical-align: top;
-        }
+        table.info-table td { border: none; padding: 0; vertical-align: top; }
         table.items-table {
             width: 100%;
             border-collapse: collapse;
@@ -55,30 +43,18 @@
             padding: 10px;
             text-align: left;
         }
-        table.items-table thead {
-            background-color: #f7f7f7;
-        }
-        table.items-table th {
-            font-weight: bold;
-            color: #555;
-        }
-        .totals {
-            margin-top: 30px;
-            float: right;
-            width: 45%;
-        }
-        .totals table {
-            width: 100%;
-        }
-        .totals table td {
-            border: none;
-            padding: 5px 0;
-        }
+        table.items-table thead { background-color: #f7f7f7; }
+        table.items-table th { font-weight: bold; color: #555; }
+        .totals { margin-top: 20px; float: right; width: 45%; }
+        .totals table { width: 100%; }
+        .totals table td { border: none; padding: 5px 0; }
         .totals .grand-total {
             font-weight: bold;
             font-size: 18px;
-            background-color: #f7f7f7;
+            background-color: #f0f5ff;
+            color: #1d4ed8;
             padding: 10px !important;
+            border-radius: 5px;
         }
         .footer {
             position: fixed;
@@ -98,27 +74,38 @@
             transform: translate(-50%, -50%) rotate(-15deg);
             font-size: 100px;
             font-weight: bold;
-            color: #0d6efd;
-            border: 7px solid #0d6efd;
+            color: #16a34a;
+            border: 7px solid #16a34a;
             padding: 10px 30px;
             border-radius: 10px;
             opacity: 0.1;
             text-transform: uppercase;
             z-index: -1;
         }
+        .text-right { text-align: right; }
     </style>
 </head>
 <body>
-    <div class="paid-stamp">TERBAYAR</div>
+    @php
+        $investor = $payout->investment->investor;
+        $investment = $payout->investment;
+        $project = $investment->project;
+        
+        $investorProfit = $payout->profit_amount;
+        $investorInitialInvestment = $investment->amount;
+        $totalReturn = $investorInitialInvestment + $investorProfit;
+    @endphp
+
+    <div class="paid-stamp">LUNAS</div>
 
     <div class="container">
         
         <table class="info-table">
             <tr>
                 <td style="width: 50%;" class="company-details">
-                    <h2>Nama Perusahaan Anda</h2>
-                    <p>Jalan Perusahaan No. 123, Kota, Kode Pos</p>
-                    <p>kontak@perusahaan.com</p>
+                    <h2>Mariee Konveksi</h2>
+                    <p>Jalan Soekarno Hatta No. 9, Malang</p>
+                    <p>kontak@mariee.com</p>
                 </td>
                 <td style="width: 50%; text-align: right;" class="header">
                     <h1>Bukti Pembayaran</h1>
@@ -131,12 +118,11 @@
             <tr>
                 <td style="width: 50%;" class="details">
                     <p style="color: #888;">DIBAYARKAN KEPADA:</p>
-                    <p style="font-weight: bold; font-size: 16px;">{{ $payout->investment->investor->user->name }}</p>
-                    <p>Investor</p>
+                    <p style="font-weight: bold; font-size: 16px;">{{ $investor->user->name }}</p>
                 </td>
                 <td style="width: 50%; text-align: right;" class="details">
-                     <p><strong>Tanggal Pembayaran:</strong> {{ $payout->payment_date->isoFormat('D MMMM YYYY') }}</p>
-                     <p><strong>Diproses oleh:</strong> {{ $payout->processor->name }}</p>
+                     <p><strong>Tanggal Pembayaran:</strong> {{ \Carbon\Carbon::parse($payout->payment_date)->isoFormat('D MMMM YYYY') }}</p>
+                     <p><strong>Diproses oleh:</strong> {{ $payout->processor->name ?? 'Admin' }}</p>
                 </td>
             </tr>
         </table>
@@ -145,35 +131,48 @@
             <thead>
                 <tr>
                     <th style="width:70%;">Deskripsi</th>
-                    <th style="width:30%; text-align:right;">Jumlah</th>
+                    <th style="width:30%;" class="text-right">Jumlah</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>
-                        <strong>Pembayaran Profit Investasi pada Proyek: {{ $payout->investment->project->name }}</strong><br>
+                        <strong>Pengembalian Investasi Awal</strong><br>
                         <span style="font-size:11px; color: #666">
-                            Investasi awal ({{ $payout->investment->qty }} pcs): Rp {{ number_format($payout->investment->amount, 0, ',', '.') }}
+                            Untuk proyek: {{ $project->name }}
                         </span>
                     </td>
-                    <td style="text-align:right;">Rp {{ number_format($payout->amount, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($investorInitialInvestment, 0, ',', '.') }}</td>
+                </tr>
+                 <tr>
+                    <td>
+                        <strong>Pembayaran Profit Investasi ({{ $investment->equity_percentage }}%)</strong><br>
+                        <span style="font-size:11px; color: #666">
+                            Dari total profit proyek
+                        </span>
+                    </td>
+                    <td class="text-right">Rp {{ number_format($investorProfit, 0, ',', '.') }}</td>
                 </tr>
             </tbody>
         </table>
 
         <div class="totals">
             <table>
+                <tr>
+                    <td>Subtotal</td>
+                    <td class="text-right">Rp {{ number_format($totalReturn, 0, ',', '.') }}</td>
+                </tr>
                 <tr class="grand-total">
                     <td>Total Dibayarkan</td>
-                    <td style="text-align: right;">Rp {{ number_format($payout->amount, 0, ',', '.') }}</td>
+                    <td class="text-right">Rp {{ number_format($totalReturn, 0, ',', '.') }}</td>
                 </tr>
             </table>
         </div>
 
-        @if(isset($receiptImagePath))
-        <div style="margin-top: 40px; border-top: 1px dashed #ccc; padding-top: 20px;">
+        @if($payout->receipt_path && file_exists(public_path('storage/' . $payout->receipt_path)))
+        <div style="clear: both; margin-top: 120px; border-top: 1px dashed #ccc; padding-top: 20px;">
             <h3>Lampiran: Bukti Transfer</h3>
-            <img src="{{ $receiptImagePath }}" alt="Bukti Transfer" style="max-width: 100%; height: auto; border: 1px solid #ddd; padding: 5px;">
+            <img src="{{ public_path('storage/' . $payout->receipt_path) }}" alt="Bukti Transfer" style="max-width: 100%; height: auto; border: 1px solid #ddd; padding: 5px;">
         </div>
         @endif
 

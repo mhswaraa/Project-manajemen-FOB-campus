@@ -5,6 +5,17 @@
       
       @php
           $investor = $payout->investment->investor;
+          $investment = $payout->investment;
+          $project = $investment->project;
+          
+          // Kalkulasi finansial untuk detail
+          $totalProjectRevenue = $project->price * $project->quantity;
+          $totalProjectProfit = $totalProjectRevenue * ($project->profit / 100);
+          $investorProfit = $payout->profit_amount;
+          $investorInitialInvestment = $investment->amount;
+          $totalReturn = $investorInitialInvestment + $investorProfit;
+
+          // PERBAIKAN: Logika untuk pesan WhatsApp disesuaikan untuk investor
           $phoneNumber = $investor->phone ?? null;
           if ($phoneNumber && substr($phoneNumber, 0, 1) === '0') {
               $phoneNumber = '62' . substr($phoneNumber, 1);
@@ -43,20 +54,37 @@
           <div class="bg-white p-6 rounded-lg shadow-md">
             <div class="flex justify-between items-start">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-800">Bukti Pembayaran</h2>
-                    <p class="text-gray-500">Proyek: <span class="font-medium">{{ $payout->investment->project->name }}</span></p>
+                    <h2 class="text-2xl font-bold text-gray-800">Rincian Pembayaran</h2>
+                    <p class="text-gray-500">Proyek: <span class="font-medium">{{ $project->name }}</span></p>
                 </div>
                 <span class="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">Lunas</span>
             </div>
+            
             <div class="mt-6 pt-4 border-t">
-                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div><dt class="text-gray-500">Jumlah Profit</dt><dd class="font-semibold text-gray-900 text-lg">Rp {{ number_format($payout->profit_amount, 0, ',', '.') }}</dd></div>
-                    <div><dt class="text-gray-500">Tanggal Bayar</dt><dd class="font-semibold text-gray-900">{{ $payout->payment_date->isoFormat('D MMMM YYYY, HH:mm') }}</dd></div>
-                    <div><dt class="text-gray-500">ID Investasi</dt><dd class="font-semibold text-gray-900">#{{ $payout->investment_id }}</dd></div>
-                    <div><dt class="text-gray-500">Diproses oleh</dt><dd class="font-semibold text-gray-900">{{ $payout->processor->name }}</dd></div>
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Rincian Perhitungan</h3>
+                <dl class="space-y-3 text-sm">
+                    <div class="bg-indigo-50 p-3 rounded-lg">
+                        <div class="font-semibold text-gray-700 mb-2">Bagian Investor</div>
+                        <div class="flex justify-between"><dt class="text-gray-500">Investasi Awal</dt><dd class="font-medium text-gray-800">Rp {{ number_format($investorInitialInvestment, 0, ',', '.') }}</dd></div>
+                        <div class="flex justify-between"><dt class="text-gray-500">Ekuitas ({{ $investment->equity_percentage }}%)</dt><dd class="font-medium text-green-600">Rp {{ number_format($investorProfit, 0, ',', '.') }}</dd></div>
+                    </div>
+                    <div class="flex justify-between items-center pt-3 border-t">
+                        <dt class="text-base font-semibold text-gray-700">Total Dana Kembali</dt>
+                        <dd class="font-bold text-xl text-indigo-600">Rp {{ number_format($totalReturn, 0, ',', '.') }}</dd>
+                    </div>
                 </dl>
             </div>
-             <div class="mt-4 pt-4 border-t">
+
+            <div class="mt-6 pt-4 border-t">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Detail Transaksi</h3>
+                 <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div><dt class="text-gray-500">Tanggal Bayar</dt><dd class="font-semibold text-gray-900">{{ \Carbon\Carbon::parse($payout->payment_date)->isoFormat('D MMMMangleOfElevation, HH:mm') }}</dd></div>
+                    <div><dt class="text-gray-500">Diproses oleh</dt><dd class="font-semibold text-gray-900">{{ $payout->processor->name ?? 'N/A' }}</dd></div>
+                    <div><dt class="text-gray-500">ID Pembayaran</dt><dd class="font-mono text-gray-900">#{{ $payout->id }}</dd></div>
+                    <div><dt class="text-gray-500">ID Investasi</dt><dd class="font-mono text-gray-900">#{{ $payout->investment_id }}</dd></div>
+                 </dl>
+            </div>
+             <div class="mt-6 pt-4 border-t">
                  <h3 class="text-lg font-medium text-gray-900">Catatan</h3>
                  <p class="text-sm text-gray-600 mt-2">{{ $payout->notes ?: 'Tidak ada catatan.' }}</p>
              </div>
@@ -68,12 +96,13 @@
             <div class="bg-white p-6 rounded-lg shadow-md">
                 <h3 class="text-lg font-medium text-gray-900">Aksi Dokumen</h3>
                 <div class="mt-4 space-y-3">
-                    <a href="{{ asset('storage/' . $payout->receipt_path) }}" target="_blank" class="w-full flex items-center justify-center gap-2 text-center px-4 py-3 bg-gray-100 text-gray-800 text-sm font-semibold rounded-lg hover:bg-gray-200">
+                    <a href="{{ Storage::url($payout->receipt_path) }}" target="_blank" class="w-full flex items-center justify-center gap-2 text-center px-4 py-3 bg-gray-100 text-gray-800 text-sm font-semibold rounded-lg hover:bg-gray-200">
                       <x-heroicon-s-photo class="h-5 w-5"/> Lihat Bukti Transfer
                     </a>
-                    <a href="{{ route('admin.payouts.download', $payout) }}" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-gray-700">
+                    <a href="{{ route('admin.payouts.pdf', $payout) }}" target="_blank" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-gray-700">
                       <x-heroicon-s-arrow-down-tray class="h-5 w-5"/> Download PDF
                     </a>
+                    {{-- PERBAIKAN: Tombol WhatsApp yang disesuaikan --}}
                     <a href="{{ ($phoneNumber && $gdriveLink) ? $whatsappUrl : '#' }}" 
                        target="_blank"
                        @if(!$phoneNumber || !$gdriveLink)

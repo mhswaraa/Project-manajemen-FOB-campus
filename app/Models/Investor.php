@@ -19,6 +19,7 @@ class Investor extends Model
         'phone',
         'amount',
         'gdrive_link', // <-- Tambahkan ini
+        'mou_path', // Tambahkan kolom baru di sini
         'registered_at',
     ];
 

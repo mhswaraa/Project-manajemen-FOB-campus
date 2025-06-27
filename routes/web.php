@@ -121,11 +121,12 @@ Route::middleware(['auth', 'role:admin'])
     Route::get('invoices/{invoice}/download', [AdminInvoiceController::class, 'downloadPDF'])->name('invoices.download');
 
     // Payouts
-    Route::get('payouts', [AdminPayoutController::class, 'index'])->name('payouts.index');
-    Route::post('payouts/{investment}', [AdminPayoutController::class, 'store'])->name('payouts.store');
-    // == FIX: MENAMBAHKAN ROUTE UNTUK HALAMAN DETAIL PAYOUT ==
+     Route::get('payouts', [AdminPayoutController::class, 'index'])->name('payouts.index');
+    Route::post('payouts/process', [AdminPayoutController::class, 'process'])->name('payouts.process');
     Route::get('payouts/{payout}', [AdminPayoutController::class, 'show'])->name('payouts.show');
-    Route::get('payouts/{payout}/download', [AdminPayoutController::class, 'downloadPDF'])->name('payouts.download');
+    Route::get('payouts/{payout}/receipt', [AdminPayoutController::class, 'downloadReceipt'])->name('payouts.receipt');
+     // PERBAIKAN: Menambahkan route untuk download PDF
+    Route::get('payouts/{payout}/pdf', [AdminPayoutController::class, 'downloadReceipt'])->name('payouts.pdf');
 });
 
 
@@ -168,6 +169,10 @@ Route::prefix('investor')
     // 2) Daftar Proyek Aktif
     Route::get('projects', [InvestorProjectController::class, 'index'])
          ->name('projects.index');
+     // --- RUTE BARU UNTUK MOU ---
+    Route::get('profile/download-mou', [InvestorProfileController::class, 'downloadMOU'])->name('profile.downloadMOU');
+    Route::post('profile/upload-mou', [InvestorProfileController::class, 'uploadMOU'])->name('profile.uploadMOU');
+    // ----------------------------
 
     // 3) Invest Form per Proyek
     Route::get('projects/{project}/invest', [InvestorProjectController::class, 'create'])

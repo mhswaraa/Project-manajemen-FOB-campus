@@ -14,58 +14,53 @@
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Profit Dibayarkan
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tanggal Bayar
-                </th>
                 <th scope="col" class="relative px-6 py-3">
                     <span class="sr-only">Aksi</span>
                 </th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-            @forelse ($payoutHistory as $payout)
+            @forelse ($payoutsReady as $investment)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {{ $payout->investment->investor->user->name }}
+                        {{ $investment->investor->user->name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ $payout->investment->project->name }}
+                        {{ $investment->project->name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        Rp {{ number_format($payout->investment->amount, 0, ',', '.') }}
+                        Rp {{ number_format($investment->amount, 0, ',', '.') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                        Rp {{ number_format($payout->profit_amount, 0, ',', '.') }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ \Carbon\Carbon::parse($payout->payment_date)->isoFormat('D MMMM YYYY') }}
+                        Rp {{ number_format($investment->profit_to_be_paid, 0, ',', '.') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        {{-- PERBAIKAN: Mengarahkan ke halaman detail payout --}}
-                        <a href="{{ route('admin.payouts.show', $payout->id) }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Detail Payout
+                        <a href="{{ route('admin.projects.show', $investment->project_id) }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Detail
                         </a>
                         <button 
                             type="button"
-                            @click="$dispatch('open-modal', { name: 'receipt-modal', receiptUrl: '{{ Storage::url($payout->receipt_path) }}' })"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-cyan-700 bg-cyan-100 hover:bg-cyan-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500">
-                            Lihat Bukti
+                            @click="$dispatch('open-modal', { 
+                                name: 'payment-modal', 
+                                investmentId: {{ $investment->id }},
+                                profitAmount: '{{ number_format($investment->profit_to_be_paid, 0, ',', '.') }}',
+                                investorName: '{{ $investment->investor->user->name }}'
+                            })" 
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Bayar
                         </button>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                        Belum ada riwayat pembayaran yang tercatat.
+                    <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                        Tidak ada pembayaran yang siap diproses saat ini.
                     </td>
                 </tr>
             @endforelse
         </tbody>
     </table>
-    <div class="p-4 border-t">
-        {{ $payoutHistory->links() }}
-    </div>
 </div>
 
-<!-- Modal for Receipt. Pastikan Anda sudah memiliki file modal ini. -->
-@include('admin.payouts.partials.receipt-modal')
+<!-- Modal for Payment. Pastikan Anda sudah memiliki file modal ini. -->
+@include('admin.payouts.partials.payment-modal')

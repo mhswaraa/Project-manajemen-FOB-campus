@@ -4,10 +4,10 @@
 
     <main class="flex-1 overflow-y-auto p-6 lg:p-8" 
           x-data="{ 
-            paymentModalOpen: false,
-            receiptModalOpen: false, 
-            receiptImageUrl: '',
-            selectedInvestment: null 
+              paymentModalOpen: false,
+              receiptModalOpen: false, 
+              receiptImageUrl: '',
+              selectedInvestment: null 
           }">
       
       <div class="mb-8">
@@ -34,56 +34,18 @@
           </nav>
         </div>
         
-        <div class="overflow-x-auto">
+        <div class="p-4">
             @if ($tab == 'unpaid')
-                {{-- Tabel untuk Pembayaran yang Siap Diproses --}}
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proyek Selesai</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profit Dibayarkan</th><th class="relative px-6 py-3"><span class="sr-only">Aksi</span></th></tr></thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse ($payoutsReady as $investment)
-                      @php $profit = $investment->qty * $investment->project->profit; @endphp
-                      <tr>
-                        <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="flex-shrink-0 h-10 w-10"><img class="h-10 w-10 rounded-full object-cover" src="https://ui-avatars.com/api/?name={{ urlencode($investment->investor->user->name) }}&background=E8EAF6&color=3F51B5" alt=""></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">{{ $investment->investor->user->name }}</div><div class="text-sm text-gray-500">{{ $investment->investor->user->email }}</div></div></div></td>
-                        <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">{{ $investment->project->name }}</div><div class="text-sm text-gray-500">Investasi {{ $investment->qty }} slot</div></td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">Rp {{ number_format($profit, 0, ',', '.') }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button type="button" @click="paymentModalOpen = true; selectedInvestment = {{ json_encode($investment->load('investor.user', 'project')) }};" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-sm text-xs">Bayar & Catat</button></td>
-                      </tr>
-                    @empty
-                      <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Tidak ada pembayaran profit yang siap diproses saat ini.</td></tr>
-                    @endforelse
-                  </tbody>
-                </table>
+                {{-- PERBAIKAN: Menggunakan struktur tabel baru --}}
+                @include('admin.payouts.partials.unpaid-tab', ['payoutsReady' => $payoutsReady])
             @else
                 {{-- Tabel untuk Riwayat Pembayaran --}}
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investor</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detail Pembayaran</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diproses Oleh</th><th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Bukti</th></tr></thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse ($payoutHistory as $payout)
-                    <tr>
-                      <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="flex-shrink-0 h-10 w-10"><img class="h-10 w-10 rounded-full object-cover" src="https://ui-avatars.com/api/?name={{ urlencode($payout->investment->investor->user->name) }}&background=E8EAF6&color=3F51B5" alt=""></div><div class="ml-4"><div class="text-sm font-medium text-gray-900">{{ $payout->investment->investor->user->name }}</div></div></div></td>
-                      <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-bold text-gray-900">Rp {{ number_format($payout->profit_amount, 0, ',', '.') }}</div><div class="text-sm text-gray-500">Proyek: {{ $payout->investment->project->name }}</div><div class="text-sm text-gray-500">Tgl Bayar: {{ $payout->payment_date->format('d M Y') }}</div></td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $payout->processor->name }}</td>
-                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a href="{{ route('admin.payouts.show', $payout) }}" class="text-indigo-600 hover:text-indigo-900 font-semibold">
-                        Detail
-                      </a>
-                    </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Belum ada riwayat pembayaran yang tercatat.</td></tr>
-                    @endforelse
-                  </tbody>
-                </table>
-                <div class="p-4 border-t">{{ $payoutHistory->links() }}</div>
+                @include('admin.payouts.partials.history-tab', ['payoutHistory' => $payoutHistory])
             @endif
         </div>
       </div>
 
-      <!-- Modal Pembayaran Profit (sama seperti sebelumnya) -->
-      @include('admin.payouts.partials.payment-modal')
-      
-      <!-- Modal Lihat Bukti (diletakkan di sini untuk digunakan kedua tab) -->
-      @include('admin.payouts.partials.receipt-modal')
+      <!-- Modal Pembayaran dan Bukti akan di-include dari dalam partials -->
     </main>
   </div>
 </x-app-layout>

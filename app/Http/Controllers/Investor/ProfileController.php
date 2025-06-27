@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Investor;
-use App\Models\Investment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage; // PERBAIKAN: Menambahkan import untuk Storage
 
 class ProfileController extends Controller
 {
@@ -31,7 +32,7 @@ class ProfileController extends Controller
             // Kalkulasi estimasi profit
             $estimatedProfit = DB::table('investments')
                 ->join('projects', 'investments.project_id', '=', 'projects.id')
-                ->where('investments.investor_id', $investor->investor_id)
+                ->where('investments.investor_id', $investor->id) // Menggunakan $investor->id
                 ->where('investments.approved', true)
                 ->sum(DB::raw('investments.qty * projects.profit'));
         }
@@ -42,7 +43,39 @@ class ProfileController extends Controller
             'totalInvested',
             'projectsCount',
             'estimatedProfit'
-        ));
+        )); 
+    }
+
+    public function downloadMOU()
+    {
+        $investor = Auth::user();
+        $pdf = Pdf::loadView('investor.profile.mou_pdf', compact('investor'));
+
+        return $pdf->download('MOU-Investasi-' . $investor->name . '.pdf');
+    }
+
+    /**
+     * Upload the signed MOU.
+     */
+    public function uploadMOU(Request $request)
+    {
+        $request->validate([
+            'mou_document' => 'required|file|mimes:pdf|max:5120', // Maksimal 5MB
+        ]);
+
+        $investor = Auth::user()->investor;
+
+        // Hapus file MOU lama jika ada
+        if ($investor->mou_path && Storage::disk('public')->exists($investor->mou_path)) {
+            Storage::disk('public')->delete($investor->mou_path);
+        }
+
+        // Simpan file baru
+        $path = $request->file('mou_document')->store('mou_investor', 'public');
+        $investor->mou_path = $path;
+        $investor->save(); // Ini akan berjalan dengan benar setelah 'Storage' di-import
+
+        return back()->with('success', 'Dokumen MOU berhasil diunggah.');
     }
 
     /**
@@ -70,8 +103,8 @@ class ProfileController extends Controller
             ]
         );
 
-        // PERBAIKAN DI SINI: Ubah nama rute menjadi 'investor.profile'
-        return redirect()->route('investor.profile')
+        // PERBAIKAN: Ubah nama rute menjadi 'investor.profile.index'
+        return redirect()->route('investor.profile.index')
                          ->with('success', 'Profil Anda telah berhasil diperbarui.');
     }
 }

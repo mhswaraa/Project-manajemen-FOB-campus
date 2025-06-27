@@ -55,6 +55,55 @@
             @include('penjahit.partials.update-password-form')
           </div>
         </div>
+         {{-- PERBAIKAN: Bagian untuk MOU --}}
+            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                <div class="max-w-xl">
+                    <section>
+                        <header>
+                            <h2 class="text-lg font-medium text-gray-900">
+                                {{ __('Perjanjian Kerja Sama (MOU)') }}
+                            </h2>
+
+                            <p class="mt-1 text-sm text-gray-600">
+                                {{ __('Silakan unduh template MOU, tandatangani, lalu unggah kembali dalam format PDF.') }}
+                            </p>
+                        </header>
+
+                        <div class="mt-6 space-y-4">
+                            <a href="{{ route('investor.profile.downloadMOU') }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                Download Template MOU
+                            </a>
+
+                            <hr>
+
+                            <form method="post" action="{{ route('investor.profile.uploadMOU') }}" enctype="multipart/form-data">
+                                @csrf
+                                <div>
+                                    <x-input-label for="mou_document" :value="__('Upload Dokumen MOU (PDF)')" />
+                                    <input id="mou_document" name="mou_document" type="file" class="mt-1 block w-full" accept=".pdf" required />
+                                    <x-input-error class="mt-2" :messages="$errors->get('mou_document')" />
+                                </div>
+                                <div class="flex items-center gap-4 mt-4">
+                                    <x-primary-button>{{ __('Upload & Simpan') }}</x-primary-button>
+                                </div>
+                            </form>
+
+                            @if ($investor->mou_path)
+                                <div class="mt-4 text-sm text-green-600">
+                                    <a href="{{ Storage::url($investor->mou_path) }}" target="_blank" class="font-bold underline">
+                                        MOU telah diunggah. Lihat dokumen.
+                                    </a>
+                                </div>
+                            @else
+                                <div class="mt-4 text-sm text-red-600">
+                                    Status: Belum ada MOU yang diunggah.
+                                </div>
+                            @endif
+                        </div>
+                    </section>
+                </div>
+            </div>
+            {{-- Akhir Bagian MOU --}}
 
         {{-- Kolom Kanan: Ringkasan Portofolio --}}
         <div class="lg:col-span-1">
