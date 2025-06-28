@@ -53,7 +53,7 @@
             </li>
 
             <li>
-                <a href="{{ route('penjahit.profile.index') }}"
+                <a href="{{ route('penjahit.profile') }}"
                    @class([
                        'flex items-center gap-3 rounded-lg px-4 py-2 text-sm font-medium transition',
                        'bg-teal-100 text-teal-700' => request()->routeIs('penjahit.profile.*'),

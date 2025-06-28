@@ -53,22 +53,33 @@
 
               {{-- Progress Bar Produksi --}}
               @if($investment->approved)
-              <div class="mt-4">
-                <div class="flex justify-between items-center mb-1 text-sm"><span class="font-medium text-gray-600">Progres Produksi</span><span class="font-semibold text-teal-600">{{ $investment->production_progress }}%</span></div>
-                <div class="w-full bg-gray-200 rounded-full h-2"><div class="bg-teal-500 h-2 rounded-full" style="width: {{ $investment->production_progress }}%"></div></div>
-              </div>
+                @php
+                  // PERBAIKAN: Kalkulasi progres produksi dilakukan di sini
+                  $project = $investment->project;
+                  $totalProduction = $project->production_progresses_sum_quantity ?? 0;
+                  $projectQuantity = $project->qty;
+                  $progress = $projectQuantity > 0 ? round(($totalProduction / $projectQuantity) * 100) : 0;
+                @endphp
+                <div class="mt-4">
+                  <div class="flex justify-between items-center mb-1 text-sm">
+                    <span class="font-medium text-gray-600">Progres Produksi</span>
+                    <span class="font-semibold text-teal-600">{{ $progress }}%</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-teal-500 h-2 rounded-full" style="width: {{ $progress }}%"></div>
+                  </div>
+                </div>
               @endif
 
               <div class="mt-5 pt-4 border-t border-gray-100 flex-grow flex items-end">
                   {{-- Tombol Aksi --}}
                   @if(!$investment->approved)
                     <div class="flex items-center gap-2 w-full">
-                        {{-- <a href="{{ route('investor.investments.edit', $investment) }}" class="flex-1 text-center px-4 py-2 bg-gray-200 text-gray-800 text-sm font-semibold rounded-lg hover:bg-gray-300">Edit</a> --}}
-                        <form action="{{ route('investor.investments.destroy', $investment) }}" method="POST" class="w-full" onsubmit="return confirm('Anda yakin ingin membatalkan pengajuan investasi ini?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="w-full text-center px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700">Batalkan</button>
-                        </form>
+                      <form action="{{ route('investor.investments.destroy', $investment) }}" method="POST" class="w-full" onsubmit="return confirm('Anda yakin ingin membatalkan pengajuan investasi ini?')">
+                          @csrf
+                          @method('DELETE')
+                          <button type="submit" class="w-full text-center px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700">Batalkan</button>
+                      </form>
                     </div>
                   @else
                     <a href="{{ route('investor.investments.show', $investment) }}" class="w-full text-center px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-700">Lihat Detail</a>

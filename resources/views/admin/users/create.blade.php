@@ -11,7 +11,7 @@
             <p class="text-gray-500 mt-1">Buat akun baru dan tentukan perannya dalam sistem.</p>
           </div>
           <a href="{{ route('admin.users.index') }}" class="mt-4 sm:mt-0 flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 border border-gray-300 bg-white text-gray-700 font-semibold rounded-lg hover:bg-gray-50 shadow-sm">
-            <x-heroicon-s-arrow-left class="h-5 w-5"/>
+            <x-heroicon-s-arrow-left class="h-5 w-5" />
             Kembali ke Daftar
           </a>
         </div>
@@ -23,24 +23,24 @@
             
             {{-- Bagian Detail Pengguna --}}
             <div>
-                <h3 class="text-lg font-medium text-gray-900">Detail Pengguna</h3>
-                <p class="mt-1 text-sm text-gray-500">Masukkan informasi dasar untuk pengguna baru.</p>
+              <h3 class="text-lg font-medium text-gray-900">Detail Pengguna</h3>
+              <p class="mt-1 text-sm text-gray-500">Masukkan informasi dasar untuk pengguna baru.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-200 pt-6">
-                {{-- Nama Lengkap --}}
-                <div>
-                  <x-input-label for="name" :value="__('Nama Lengkap')" />
-                  <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required autofocus />
-                  <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                </div>
+              {{-- Nama Lengkap --}}
+              <div>
+                <x-input-label for="name" :value="__('Nama Lengkap')" />
+                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required autofocus />
+                <x-input-error :messages="$errors->get('name')" class="mt-2" />
+              </div>
 
-                {{-- Email --}}
-                <div>
-                  <x-input-label for="email" :value="__('Alamat Email')" />
-                  <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email')" required />
-                  <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                </div>
+              {{-- Email --}}
+              <div>
+                <x-input-label for="email" :value="__('Alamat Email')" />
+                <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email')" required />
+                <x-input-error :messages="$errors->get('email')" class="mt-2" />
+              </div>
             </div>
             
             {{-- Role --}}
@@ -72,15 +72,15 @@
 
             {{-- Password --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <x-input-label for="password" :value="__('Password')" />
-                  <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" required />
-                  <x-input-error :messages="$errors->get('password')" class="mt-2" />
-                </div>
-                <div>
-                  <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
-                  <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" required />
-                </div>
+              <div>
+                <x-input-label for="password" :value="__('Password')" />
+                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" required autocomplete="new-password" />
+                <x-input-error :messages="$errors->get('password')" class="mt-2" />
+              </div>
+              <div>
+                <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
+                <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" required />
+              </div>
             </div>
 
             {{-- Tombol Aksi --}}

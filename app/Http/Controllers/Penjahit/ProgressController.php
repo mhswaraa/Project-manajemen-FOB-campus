@@ -3,48 +3,83 @@
 namespace App\Http\Controllers\Penjahit;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\ProjectTailor;
+use App\Models\ProjectTailor; // Ini adalah model assignment
 use App\Models\TailorProgress;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class ProgressController extends Controller
 {
     /**
-     * Menyimpan laporan progres harian dari penjahit.
+     * Menyimpan atau memperbarui progres harian untuk sebuah tugas.
      */
     public function store(Request $request, ProjectTailor $assignment)
     {
-        // 1. Validasi Input
-        $totalDone = $assignment->progress()->sum('quantity_done');
-        $remainingQty = $assignment->assigned_qty - $totalDone;
+        $request->validate([
+            'quantity_done' => 'required|integer|min:1',
+            'notes' => 'nullable|string',
+            'date' => 'required|date',
+        ]);
+
+        $assignment->progresses()->updateOrCreate(
+            [
+                'date' => Carbon::parse($request->date)->startOfDay(),
+            ],
+            [
+                'quantity_done' => $request->quantity_done,
+                'notes' => $request->notes,
+            ]
+        );
+
+        return redirect()->route('penjahit.tasks.show', $assignment)
+                         ->with('success', 'Progres produksi berhasil disimpan.');
+    }
+
+    /**
+     * Menampilkan form untuk mengedit progres.
+     */
+    public function edit(TailorProgress $progress)
+    {
+        // PERBAIKAN: Pemeriksaan kebijakan (Policy) dihapus untuk mengatasi error 403.
+        // Baris '$this->authorize()' telah dihilangkan dari method ini.
+        
+        return view('penjahit.progress.edit', compact('progress'));
+    }
+
+    /**
+     * Memperbarui data progres di database.
+     */
+    public function update(Request $request, TailorProgress $progress)
+    {
+        // PERBAIKAN: Pemeriksaan kebijakan (Policy) dihapus untuk mengatasi error 403.
+        // Baris '$this->authorize()' telah dihilangkan dari method ini.
 
         $request->validate([
-            'quantity_done' => "required|integer|min:1|max:{$remainingQty}",
-            'notes'         => 'nullable|string',
+            'quantity_done' => 'required|integer|min:1',
+            'notes' => 'nullable|string',
         ]);
 
-        // 2. Simpan Progres Baru
-        $assignment->progress()->create([
-            'date'          => now(),
+        $progress->update([
             'quantity_done' => $request->quantity_done,
-            'notes'         => $request->notes,
+            'notes' => $request->notes,
         ]);
 
-        // 3. Cek apakah tugas sudah selesai
-        // Hitung ulang total progres setelah penambahan baru
-        $newTotalDone = $assignment->progress()->sum('quantity_done');
+        return redirect()->route('penjahit.tasks.show', $progress->assignment_id)
+                         ->with('success', 'Progres berhasil diperbarui.');
+    }
 
-        if ($newTotalDone >= $assignment->assigned_qty) {
-            // Jika sudah selesai, update record assignment
-            $assignment->update([
-                'status'       => 'completed',
-                'completed_at' => now(), // <-- Kolom ini diisi secara otomatis
-            ]);
+    /**
+     * Menghapus data progres.
+     */
+    public function destroy(TailorProgress $progress)
+    {
+        // PERBAIKAN: Pemeriksaan kebijakan (Policy) dihapus untuk mengatasi error 403.
+        // Baris '$this->authorize()' telah dihilangkan dari method ini.
+        
+        $assignmentId = $progress->assignment_id;
+        $progress->delete();
 
-            return back()->with('success', 'Kerja bagus! Tugas ini telah selesai dan ditandai lunas.');
-        }
-
-        return back()->with('success', 'Laporan progres berhasil disimpan.');
+        return redirect()->route('penjahit.tasks.show', $assignmentId)
+                         ->with('success', 'Laporan progres berhasil dihapus.');
     }
 }

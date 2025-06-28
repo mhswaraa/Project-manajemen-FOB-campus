@@ -24,7 +24,7 @@
           <div><p class="text-sm font-medium text-gray-500">Total Penjahit</p><p class="text-3xl font-bold text-teal-600">{{ $penjahitCount }}</p></div>
           <div class="p-3 bg-teal-100 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75l-4.5-4.5m0 0l-4.5 4.5m4.5-4.5v12.75m4.5-4.5l-4.5 4.5m0 0l-4.5-4.5m4.5 4.5v-12.75" transform="rotate(45 12 12)" /><circle cx="7.5" cy="7.5" r="2.5" /><circle cx="16.5" cy="7.5" r="2.5" /></svg></div>
         </div>
-        <a href="{{ route('register') }}" class="bg-gray-800 text-white p-6 rounded-lg shadow-md flex items-center justify-center text-center hover:bg-gray-700 transition">
+        <a href="{{ route('admin.users.create') }}" class="bg-gray-800 text-white p-6 rounded-lg shadow-md flex items-center justify-center text-center hover:bg-gray-700 transition">
           <div><x-heroicon-o-user-plus class="w-8 h-8 mx-auto" /><p class="mt-2 text-sm font-semibold">Tambah Pengguna Baru</p></div>
         </a>
       </div>

@@ -67,39 +67,49 @@ class UserController extends Controller
      * Menyimpan user baru ke database.
      */
     
-    public function store(Request $request)
+     public function store(Request $request)
     {
+        // 1. Validasi semua input dari form
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'role' => ['required', 'in:admin,ceo,investor,penjahit'],
-            'gdrive_link' => ['nullable', 'url'], // <-- Validasi baru
+            'gdrive_link' => ['nullable', 'url', 'max:255'],
         ]);
 
-        DB::transaction(function () use ($request) {
-            $user = User::create([
+        // 2. Buat record baru di tabel 'users'
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+        ]);
+
+        // 3. Cek peran (role), dan buat profil yang sesuai jika perlu
+        if ($request->role === 'investor') {
+            Investor::create([
+                'user_id' => $user->id,
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => $request->role,
-                'email_verified_at' => now(),
+                'gdrive_link' => $request->gdrive_link,
+                'phone' => '', // Dibiarkan kosong agar diisi oleh investor nanti
             ]);
-
-            if ($request->role === 'investor') {
-                Investor::create([
-                    'user_id' => $user->id,
-                    'gdrive_link' => $request->gdrive_link, // <-- Simpan link
-                ]);
-            } elseif ($request->role === 'penjahit') {
-                Tailor::create([
-                    'user_id' => $user->id,
-                    'gdrive_link' => $request->gdrive_link, // <-- Simpan link
-                ]);
-            }
-        });
-
-        return redirect()->route('admin.users.index')->with('success', 'User baru berhasil ditambahkan.');
+        } elseif ($request->role === 'penjahit') {
+            // PERBAIKAN: Menambahkan field 'address' dengan nilai default string kosong
+            Tailor::create([
+                'user_id' => $user->id,
+                'name' => $request->name,
+                'email' => $request->email,
+                'gdrive_link' => $request->gdrive_link,
+                'phone' => '', // Dibiarkan kosong agar diisi oleh penjahit nanti
+                'address' => '', // Dibiarkan kosong agar diisi oleh penjahit nanti
+            ]);
+        }
+        
+        // 4. Redirect kembali ke halaman daftar pengguna dengan pesan sukses
+        return redirect()->route('admin.users.index')
+                         ->with('success', 'Pengguna baru berhasil ditambahkan.');
     }
 
     /**

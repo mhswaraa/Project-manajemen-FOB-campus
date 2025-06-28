@@ -62,7 +62,7 @@ class ProfileController extends Controller
             $tailor->specializations()->detach();
         }
 
-        return redirect()->route('penjahit.profile.index')->with('success', 'Profil berhasil diperbarui.');
+        return redirect()->route('penjahit.profile')->with('success', 'Profil berhasil diperbarui.');
     }
 
     public function addPortfolio(Request $request)

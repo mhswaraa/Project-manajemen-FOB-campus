@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Investor;
 
 use App\Http\Controllers\Controller;
+use App\Models\Investor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Investor;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage; // PERBAIKAN: Menambahkan import untuk Storage
+use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProfileController extends Controller
 {
@@ -17,25 +17,34 @@ class ProfileController extends Controller
      */
     public function index()
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
-        $investor = $user->investor;
 
-        // Data untuk kartu ringkasan portofolio
-        $totalInvested = 0;
-        $projectsCount = 0;
-        $estimatedProfit = 0;
+        // =================== PERUBAHAN DIMULAI DI SINI ===================
+        //
+        // Menggunakan firstOrCreate untuk memastikan profil investor selalu ada.
+        // Ini akan mencari investor dengan user_id yang cocok, atau membuatnya jika tidak ada.
+        // Tindakan ini secara permanen mengatasi masalah di mana $investor bisa null.
+        $investor = Investor::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'name' => $user->name, 
+                'email' => $user->email,
+                'phone' => '' // TAMBAHAN: Memberikan nilai default untuk 'phone'
+            ]
+        );
+        // =================== PERUBAHAN SELESAI DI SINI ===================
 
-        if ($investor) {
-            $totalInvested = $investor->investments()->where('approved', true)->sum('amount');
-            $projectsCount = $investor->investments()->where('approved', true)->distinct('project_id')->count();
-            
-            // Kalkulasi estimasi profit
-            $estimatedProfit = DB::table('investments')
-                ->join('projects', 'investments.project_id', '=', 'projects.id')
-                ->where('investments.investor_id', $investor->id) // Menggunakan $investor->id
-                ->where('investments.approved', true)
-                ->sum(DB::raw('investments.qty * projects.profit'));
-        }
+        // Dengan $investor yang dijamin ada, kalkulasi bisa dilanjutkan dengan aman.
+        $totalInvested = $investor->investments()->where('approved', true)->sum('amount');
+        $projectsCount = $investor->investments()->where('approved', true)->distinct('project_id')->count();
+        
+        // Kalkulasi estimasi profit
+        $estimatedProfit = DB::table('investments')
+            ->join('projects', 'investments.project_id', '=', 'projects.id')
+            ->where('investments.investor_id', $investor->id)
+            ->where('investments.approved', true)
+            ->sum(DB::raw('investments.qty * projects.profit'));
         
         return view('investor.profile.index', compact(
             'user', 
@@ -46,16 +55,23 @@ class ProfileController extends Controller
         )); 
     }
 
+    /**
+     * Mengunduh dokumen MOU.
+     */
     public function downloadMOU()
     {
-        $investor = Auth::user();
-        $pdf = Pdf::loadView('investor.profile.mou_pdf', compact('investor'));
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
-        return $pdf->download('MOU-Investasi-' . $investor->name . '.pdf');
+        // Mengirim data user ke view PDF untuk ditampilkan di dokumen
+        $pdf = Pdf::loadView('investor.profile.mou_pdf', ['user' => $user]);
+
+        // Membuat nama file yang unik untuk setiap user
+        return $pdf->download('MOU-Investasi-' . $user->name . '.pdf');
     }
 
     /**
-     * Upload the signed MOU.
+     * Mengunggah dokumen MOU yang telah ditandatangani.
      */
     public function uploadMOU(Request $request)
     {
@@ -63,17 +79,20 @@ class ProfileController extends Controller
             'mou_document' => 'required|file|mimes:pdf|max:5120', // Maksimal 5MB
         ]);
 
-        $investor = Auth::user()->investor;
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $investor = $user->investor;
 
-        // Hapus file MOU lama jika ada
+        // Hapus file MOU lama jika ada untuk menghindari penumpukan file
         if ($investor->mou_path && Storage::disk('public')->exists($investor->mou_path)) {
             Storage::disk('public')->delete($investor->mou_path);
         }
 
-        // Simpan file baru
+        // Simpan file baru di storage/app/public/mou_investor
         $path = $request->file('mou_document')->store('mou_investor', 'public');
+        
         $investor->mou_path = $path;
-        $investor->save(); // Ini akan berjalan dengan benar setelah 'Storage' di-import
+        $investor->save();
 
         return back()->with('success', 'Dokumen MOU berhasil diunggah.');
     }
@@ -91,8 +110,10 @@ class ProfileController extends Controller
             'phone' => 'required|string|max:20',
         ]);
 
+        // Update nama pada tabel User
         $user->update(['name' => $request->name]);
 
+        // Update atau buat data pada tabel Investor yang terhubung
         Investor::updateOrCreate(
             ['user_id' => $user->id],
             [
@@ -103,8 +124,7 @@ class ProfileController extends Controller
             ]
         );
 
-        // PERBAIKAN: Ubah nama rute menjadi 'investor.profile.index'
-        return redirect()->route('investor.profile.index')
+        return redirect()->route('investor.profile')
                          ->with('success', 'Profil Anda telah berhasil diperbarui.');
     }
 }

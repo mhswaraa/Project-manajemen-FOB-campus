@@ -58,18 +58,19 @@
                     {{ session('success') }}
                 </div>
             @endif
-             @if(session('error'))
+            @if(session('error'))
                 <div class="mb-4 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
                     {{ session('error') }}
                 </div>
             @endif
             <div class="overflow-y-auto max-h-96">
               <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-gray-50 sticky top-0">
                   <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Selesai</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Catatan</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -78,10 +79,20 @@
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ \Carbon\Carbon::parse($prog->date)->format('d M Y') }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-bold">{{ $prog->quantity_done }} pcs</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic">{{ $prog->notes ?: '-' }}</td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="{{ route('penjahit.tasks.progress.edit', $prog->id) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                            <form action="{{ route('penjahit.tasks.progress.destroy', $prog->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus laporan ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-600 hover:text-red-900">Hapus</button>
+                            </form>
+                        </div>
+                      </td>
                     </tr>
                   @empty
                     <tr>
-                      <td colspan="3" class="px-6 py-4 text-center text-gray-500">Belum ada progres yang dilaporkan.</td>
+                      <td colspan="4" class="px-6 py-4 text-center text-gray-500">Belum ada progres yang dilaporkan.</td>
                     </tr>
                   @endforelse
                 </tbody>
@@ -96,28 +107,35 @@
           <p class="text-sm text-gray-500 mb-4">Sisa pekerjaan Anda: <span class="font-bold text-orange-600">{{ $remainingQty }} pcs</span>.</p>
 
           @if($remainingQty > 0)
+            {{-- PERUBAHAN: Mengembalikan form langsung ke dalam view ini --}}
             <form action="{{ route('penjahit.tasks.progress.store', $assignment) }}" method="POST" class="space-y-4">
-              @csrf
-              <div>
-                <label for="quantity_done" class="block text-sm font-medium text-gray-700">Output Selesai (pcs)</label>
-                <input id="quantity_done" name="quantity_done" type="number" min="1" max="{{ $remainingQty }}" required
-                       class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
-                       placeholder="Jumlah hari ini">
-                <x-input-error :messages="$errors->get('quantity_done')" class="mt-2" />
-              </div>
-              <div>
-                <label for="notes" class="block text-sm font-medium text-gray-700">Catatan (opsional)</label>
-                <textarea id="notes" name="notes" rows="3"
-                          class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
-                          placeholder="Contoh: Ada sedikit kendala pada mesin jahit."></textarea>
-                <x-input-error :messages="$errors->get('notes')" class="mt-2" />
-              </div>
-              <div class="flex justify-end">
-                <button type="submit"
-                        class="w-full px-4 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
-                  Simpan Laporan
-                </button>
-              </div>
+                @csrf
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700">Tanggal Laporan</label>
+                    <input id="date" name="date" type="date" value="{{ date('Y-m-d') }}" required
+                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                    <x-input-error :messages="$errors->get('date')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="quantity_done" class="block text-sm font-medium text-gray-700">Output Selesai (pcs)</label>
+                    <input id="quantity_done" name="quantity_done" type="number" min="1" max="{{ $remainingQty }}" required
+                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                           placeholder="Jumlah hari ini">
+                    <x-input-error :messages="$errors->get('quantity_done')" class="mt-2" />
+                </div>
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700">Catatan (opsional)</label>
+                    <textarea id="notes" name="notes" rows="3"
+                              class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-teal-500 focus:border-teal-500"
+                              placeholder="Contoh: Ada sedikit kendala pada mesin jahit.">{{ old('notes') }}</textarea>
+                    <x-input-error :messages="$errors->get('notes')" class="mt-2" />
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="w-full px-4 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+                        Simpan Laporan
+                    </button>
+                </div>
             </form>
           @else
             <div class="text-center p-4 bg-green-50 rounded-lg">

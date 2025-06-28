@@ -1,103 +1,103 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Project FOB</title>
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat Font Inter dari Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Mengatur font default menjadi Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
 
-    <link rel="stylesheet" href="{{ asset('fonts/icomoon/style.css') }}">
-
-    <link rel="stylesheet" href="{{ asset('css/owl.carousel.min.css') }}">
-
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="{{ asset('css/bootstrap.min.css') }}">
-    
-    <!-- Style -->
-    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-
-    <title>Login</title>
-  </head>
-  <body>
-  
-
-  
-  <div class="content">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-6 order-md-2">
-          <img src="{{ asset('images/undraw_file_sync_ot38.svg') }}" alt="Image" class="img-fluid">
-        </div>
-        <div class="col-md-6 contents">
-          <div class="row justify-content-center">
-            <div class="col-md-8">
-              <div class="mb-4">
-              <h3><strong>Project Management</strong></h3>
-              <p class="mb-4">Platform terintegrasi untuk mengelola proyek fashion Anda.</p>
-            </div>
-            
-            {{-- FORM LOGIN YANG DISESUAIKAN DENGAN LARAVEL --}}
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
-
-                {{-- Menampilkan pesan status (jika ada) --}}
-                @if (session('status'))
-                    <div class="alert alert-success mb-3">
-                        {{ session('status') }}
-                    </div>
-                @endif
-                
-                {{-- INPUT EMAIL --}}
-                <div class="form-group first">
-                    <label for="email">Email</label>
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
-                </div>
-                @error('email')
-                    <div class="text-danger mb-3" style="font-size: 14px;">{{ $message }}</div>
-                @enderror
-
-                {{-- INPUT PASSWORD --}}
-                <div class="form-group last mb-4">
-                    <label for="password">Password</label>
-                    <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required autocomplete="current-password">
-                </div>
-                 @error('password')
-                    <div class="text-danger mb-3" style="font-size: 14px;">{{ $message }}</div>
-                @enderror
-              
-              <div class="d-flex mb-5 align-items-center">
-                {{-- REMEMBER ME --}}
-                <label class="control control--checkbox mb-0"><span class="caption">Ingat saya</span>
-                  <input type="checkbox" name="remember" id="remember_me"/>
-                  <div class="control__indicator"></div>
-                </label>
-
-                {{-- LUPA PASSWORD --}}
-                @if (Route::has('password.request'))
-                    <span class="ml-auto"><a href="{{ route('password.request') }}" class="forgot-pass">Lupa Password</a></span> 
-                @endif
-              </div>
-
-              <input type="submit" value="Log In" class="btn text-white btn-block btn-primary">
-
-              {{-- LINK DAFTAR --}}
-               @if (Route::has('register'))
-                <span class="d-block text-center my-4 text-muted"> Belum punya akun? <a href="{{ route('register') }}">Daftar di sini</a></span>
-               @endif
-            </form>
-            </div>
-          </div>
-          
-        </div>
+    <div class="flex items-center justify-center min-h-screen px-4">
         
-      </div>
-    </div>
-  </div>
+        <div class="w-full max-w-md">
 
-  
-    <script src="{{ asset('js/jquery-3.3.1.min.js') }}"></script>
-    <script src="{{ asset('js/popper.min.js') }}"></script>
-    <script src="{{ asset('js/bootstrap.min.js') }}"></script>
-    <script src="{{ asset('js/main.js') }}"></script>
-  </body>
+            <!-- Logo atau Nama Aplikasi -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Selamat Datang Kembali!</h1>
+                <p class="text-gray-500 mt-2">Silakan login untuk melanjutkan ke dasbor Anda.</p>
+            </div>
+
+            <!-- Kartu Form Login -->
+            <div class="bg-white p-8 rounded-2xl shadow-lg">
+
+                <!-- Ini adalah tempat untuk pesan status, seperti 'status' dari session -->
+                <!-- <div class="mb-4 font-medium text-sm text-green-600">
+                    {{ session('status') }}
+                </div> -->
+
+                <form method="POST" action="#">
+                    <!-- CSRF Token (Penting untuk keamanan di Laravel) -->
+                    <!-- @csrf -->
+
+                    <!-- Input Email -->
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input id="email" 
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                               type="email" 
+                               name="email" 
+                               placeholder="contoh@email.com"
+                               required 
+                               autofocus />
+                        <!-- Tempat untuk pesan error validasi email -->
+                        <!-- <p class="mt-2 text-sm text-red-600">{{ $errors->get('email') }}</p> -->
+                    </div>
+
+                    <!-- Input Password -->
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input id="password" 
+                               class="block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                               type="password"
+                               name="password"
+                               placeholder="••••••••"
+                               required />
+                         <!-- Tempat untuk pesan error validasi password -->
+                    </div>
+
+                    <!-- Opsi "Ingat Saya" dan "Lupa Password" -->
+                    <div class="flex items-center justify-between mt-6">
+                        <div class="flex items-center">
+                            <input id="remember_me" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" name="remember">
+                            <label for="remember_me" class="ml-2 block text-sm text-gray-900">Ingat saya</label>
+                        </div>
+                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500 hover:underline">
+                            Lupa password?
+                        </a>
+                    </div>
+
+                    <!-- Tombol Login -->
+                    <div class="mt-6">
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                            Login
+                        </button>
+                    </div>
+
+                    <!-- Link untuk Registrasi (Opsional) -->
+                    <div class="text-center mt-6">
+                        <p class="text-sm text-gray-600">
+                            Belum punya akun?
+                            <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500 hover:underline">
+                                Hubungi Admin
+                            </a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</body>
 </html>
