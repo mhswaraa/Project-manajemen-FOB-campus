@@ -97,21 +97,61 @@
                 {{-- Kolom Kanan: Rincian Keuangan & Daftar Investor --}}
                 <div class="lg:col-span-1 space-y-8">
                     {{-- Rincian Keuangan --}}
-                    <div class="bg-white p-6 rounded-xl shadow">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Estimasi Keuangan (Target Penuh)</h3>
-                        <dl class="space-y-3 text-sm">
-                             <div class="flex justify-between items-center"><dt class="text-gray-500">Total Modal dari Investor</dt><dd class="font-semibold text-gray-800">Rp {{ number_format($project->quantity * $project->price_per_piece, 0,',','.') }}</dd></div>
-                            <div class="pt-3 mt-3 border-t">
-                                <h4 class="text-sm font-semibold text-gray-700 mb-2">Alokasi Dana:</h4>
-                                <div class="flex justify-between items-center"><dt class="text-gray-500 ml-2">› Biaya Bahan</dt><dd class="text-gray-800">- Rp {{ number_format($project->quantity * $project->material_cost, 0,',','.') }}</dd></div>
-                                <div class="flex justify-between items-center"><dt class="text-gray-500 ml-2">› Upah Jahit</dt><dd class="text-gray-800">- Rp {{ number_format($project->quantity * $project->wage_per_piece, 0,',','.') }}</dd></div>
-                                <div class="flex justify-between items-center"><dt class="text-gray-500 ml-2">› Profit Investor</dt><dd class="text-gray-800">- Rp {{ number_format($project->quantity * $project->profit, 0,',','.') }}</dd></div>
-                            </div>
-                            <div class="pt-3 mt-3 border-t">
-                                <div class="flex justify-between items-center"><dt class="font-bold text-gray-800">Profit Bersih Konveksi</dt><dd class="font-bold text-green-600">Rp {{ number_format($project->quantity * $project->convection_profit, 0,',','.') }}</dd></div>
-                            </div>
-                        </dl>
-                    </div>
+                    {{-- GANTI KESELURUHAN BLOK "Rincian Keuangan" DENGAN INI --}}
+<div class="bg-white p-6 rounded-xl shadow">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Estimasi Keuangan (Target Penuh)</h3>
+    <dl class="space-y-3 text-sm">
+        {{-- Rincian dari Buyer --}}
+        <div class="pb-3 border-b">
+             <div class="flex justify-between items-center">
+                <dt class="font-semibold text-gray-800">Total Nominal dari Buyer</dt>
+                <dd class="font-bold text-lg text-indigo-600">Rp {{ number_format($totalNominalBuyer, 0, ',', '.') }}</dd>
+            </div>
+            <div class="flex justify-between items-center text-xs text-gray-500 mt-1">
+                <dt>Harga per Pcs</dt>
+                <dd>Rp {{ number_format($nominalPerPcs, 0, ',', '.') }} / pcs</dd>
+            </div>
+        </div>
+
+        {{-- Estimasi Modal Investor --}}
+        <div class="flex justify-between items-center pt-2">
+            <dt class="text-gray-500">Estimasi Modal Investor</dt>
+            <dd class="font-semibold text-gray-800">Rp {{ number_format($estimasiModalInvestor, 0, ',', '.') }}</dd>
+        </div>
+
+        {{-- Alokasi Dana --}}
+        <div class="pt-3 mt-3 border-t">
+            <h4 class="text-sm font-semibold text-gray-700 mb-2">Alokasi Dana:</h4>
+            <div class="flex justify-between items-center text-gray-600">
+                <dt class="ml-2">› Total Biaya Bahan</dt>
+                <dd>- Rp {{ number_format($estimasiBiayaBahan, 0, ',', '.') }}</dd>
+            </div>
+            <div class="flex justify-between items-center text-gray-600">
+                <dt class="ml-2">› Total Upah Jahit</dt>
+                <dd>- Rp {{ number_format($estimasiUpahJahit, 0, ',', '.') }}</dd>
+            </div>
+        </div>
+
+        {{-- Total Biaya Produksi --}}
+        <div class="flex justify-between items-center pt-2 border-t mt-2">
+            <dt class="font-medium text-gray-800">Total Biaya Produksi</dt>
+            <dd class="font-medium text-red-600">- Rp {{ number_format($totalBiayaProduksi, 0, ',', '.') }}</dd>
+        </div>
+
+        {{-- Estimasi Keuntungan --}}
+        <div class="pt-3 mt-3 border-t">
+             <h4 class="text-sm font-semibold text-gray-700 mb-2">Estimasi Keuntungan:</h4>
+            <div class="flex justify-between items-center">
+                <dt class="text-gray-500 ml-2">› Keuntungan Investor</dt>
+                <dd class="font-semibold text-blue-600">+ Rp {{ number_format($estimasiKeuntunganInvestor, 0, ',', '.') }}</dd>
+            </div>
+             <div class="flex justify-between items-center">
+                <dt class="text-gray-500 ml-2">› Profit Bersih Konveksi</dt>
+                <dd class="font-semibold text-green-600">+ Rp {{ number_format($estimasiProfitKonveksi, 0, ',', '.') }}</dd>
+            </div>
+        </div>
+    </dl>
+</div>
 
                     {{-- Daftar Investor --}}
                     <div class="bg-white rounded-xl shadow overflow-hidden">

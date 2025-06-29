@@ -17,6 +17,8 @@ class Investor extends Model
         'name',
         'email',
         'phone',
+        'nik',           // Tambahkan ini
+        'alamat',
         'amount',
         'gdrive_link', // <-- Tambahkan ini
         'mou_path', // Tambahkan kolom baru di sini

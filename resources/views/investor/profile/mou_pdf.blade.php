@@ -91,44 +91,30 @@
     </p>
 
     <div class="party-section">
-        <table>
-            <tr>
-                <td class="label">Nama</td>
-                <td>: _________________________</td>
-            </tr>
-            <tr>
-                <td class="label">Jabatan</td>
-                <td>: Direktur Utama Mariee Konveksi</td>
-            </tr>
-            <tr>
-                <td class="label">Alamat</td>
-                <td>: Jl. Bedoyo No.28A RT04/RW04 Kel. Kemlayan, Kec. Serengan, 57151, Surakarta</td>
-            </tr>
-        </table>
-        <p class="mt-1">Dalam hal ini bertindak untuk dan atas nama Mariee Konveksi, yang selanjutnya disebut sebagai <strong>PIHAK PERTAMA</strong>.</p>
-    </div>
-
-    <div class="party-section">
-        <table>
-            <tr>
-                <td class="label">Nama</td>
-                <td>: {{ $investor->name }}</td>
-            </tr>
-             <tr>
-                <td class="label">No. KTP</td>
-                <td>: _________________________</td>
-            </tr>
-            <tr>
-                <td class="label">Alamat</td>
-                <td>: _________________________________________________</td>
-            </tr>
-            <tr>
-                <td class="label">No. Telepon</td>
-                <td>: _________________________</td>
-            </tr>
-        </table>
-        <p class="mt-1">Dalam hal ini bertindak untuk dan atas nama diri sendiri, yang selanjutnya disebut sebagai <strong>PIHAK KEDUA</strong>.</p>
-    </div>
+    <table>
+        <tr>
+            <td class="label">Nama</td>
+            {{-- Menggunakan data dari $user atau $investor --}}
+            <td>: {{ $user->name }}</td>
+        </tr>
+         <tr>
+            <td class="label">No. KTP</td>
+            {{-- Mengisi NIK dari data investor --}}
+            <td>: {{ $investor->nik }}</td>
+        </tr>
+        <tr>
+            <td class="label">Alamat</td>
+            {{-- Mengisi Alamat dari data investor --}}
+            <td>: {{ $investor->alamat }}</td>
+        </tr>
+        <tr>
+            <td class="label">No. Telepon</td>
+            {{-- Mengisi No. Telepon dari data investor --}}
+            <td>: {{ $investor->phone_number }}</td>
+        </tr>
+    </table>
+    <p class="mt-1">Dalam hal ini bertindak untuk dan atas nama diri sendiri, yang selanjutnya disebut sebagai <strong>PIHAK KEDUA</strong>.</p>
+</div>
 
     <p class="text-justify mb-4">
         Dengan ini kedua belah pihak sepakat untuk mengikatkan diri dalam suatu Perjanjian Kerja Sama Investasi (selanjutnya disebut "Perjanjian") dengan syarat dan ketentuan sebagai berikut:

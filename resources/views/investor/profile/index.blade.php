@@ -36,28 +36,51 @@
                 <h2 class="text-lg font-medium text-gray-900">Informasi Profil</h2>
                 <p class="mt-1 text-sm text-gray-600">Lengkapi atau perbarui informasi profil dan kontak Anda.</p>
               </header>
-              <form action="{{ route('investor.profile.update') }}" method="POST" class="mt-6 space-y-6">
-                @csrf
-                <div>
-                  <x-input-label for="name" :value="__('Nama Lengkap')" />
-                  <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus />
-                  <x-input-error :messages="$errors->get('name')" class="mt-2" />
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <x-input-label for="email" :value="__('Alamat Email (Tidak dapat diubah)')" />
-                    <x-text-input id="email" type="email" class="mt-1 block w-full bg-gray-100" :value="$user->email" disabled />
-                  </div>
-                  <div>
-                    <x-input-label for="phone" :value="__('No. Telepon Aktif')" />
-                    <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" :value="old('phone', $investor->phone ?? '')" required />
-                    <x-input-error :messages="$errors->get('phone')" class="mt-2" />
-                  </div>
-                </div>
-                <div class="flex items-center gap-4">
-                  <x-primary-button>Simpan Perubahan</x-primary-button>
-                </div>
-              </form>
+              {{-- GANTI SELURUH BLOK FORM ANDA DENGAN INI --}}
+<form action="{{ route('investor.profile.update') }}" method="POST" class="mt-6 space-y-6">
+    @csrf
+    
+    {{-- Input Nama Lengkap (Tidak berubah) --}}
+    <div>
+        <x-input-label for="name" :value="__('Nama Lengkap')" />
+        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus />
+        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+    </div>
+
+    {{-- Input Email (Tidak berubah) --}}
+    <div>
+        <x-input-label for="email" :value="__('Alamat Email (Tidak dapat diubah)')" />
+        <x-text-input id="email" type="email" class="mt-1 block w-full bg-gray-100" :value="$user->email" disabled />
+    </div>
+
+    {{-- =================== INI BAGIAN YANG DIPERBAIKI =================== --}}
+    {{-- Input No. Telepon --}}
+    <div>
+        <x-input-label for="phone" :value="__('No. Telepon Aktif')" />
+        <x-text-input id="phone" name="phone" type="text" class="mt-1 block w-full" :value="old('phone', $investor->phone)" required />
+        <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+    </div>
+    {{-- =================== AKHIR PERBAIKAN ===================== --}}
+
+    {{-- Input NIK (Tidak berubah) --}}
+    <div>
+        <x-input-label for="nik" :value="__('NIK')" />
+        <x-text-input id="nik" name="nik" type="text" class="mt-1 block w-full" :value="old('nik', $investor->nik)" required placeholder="Masukkan 16 digit NIK" />
+        <x-input-error :messages="$errors->get('nik')" class="mt-2" />
+    </div>
+
+    {{-- Input Alamat (Tidak berubah) --}}
+    <div>
+        <x-input-label for="alamat" :value="__('Alamat Lengkap')" />
+        <textarea id="alamat" name="alamat" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required placeholder="Masukkan alamat lengkap">{{ old('alamat', $investor->alamat) }}</textarea>
+        <x-input-error :messages="$errors->get('alamat')" class="mt-2" />
+    </div>
+
+    {{-- Tombol Simpan (Tidak berubah) --}}
+    <div class="flex items-center gap-4">
+        <x-primary-button>Simpan Perubahan</x-primary-button>
+    </div>
+</form>
             </section>
           </div>
 

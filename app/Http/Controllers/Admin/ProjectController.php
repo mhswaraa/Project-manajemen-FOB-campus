@@ -40,35 +40,35 @@ class ProjectController extends Controller
         ));
     }
     
-    // ... method lainnya (store, edit, update, destroy) tidak perlu diubah ...
-    // ... Pastikan semua method lain tetap ada ...
-
     /**
      * Simpan proyek baru.
      */
     public function store(Request $request)
-    {
-        $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'price_per_piece'  => 'required|numeric|min:0',
-            'material_cost'    => 'required|numeric|min:0', // Validasi baru
-            'quantity'         => 'required|integer|min:1',
-            'profit'           => 'required|numeric|min:0',
-            'convection_profit'=> 'required|numeric|min:0',
-            'wage_per_piece'   => 'required|numeric|min:0',
-            'deadline'         => 'required|date|after_or_equal:today',
-            'status'           => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
-            'image'            => 'nullable|image|max:2048',
-        ]);
+{
+    // =================== KEMBALIKAN KE 'image' ===================
+    $data = $request->validate([
+        'name'              => 'required|string|max:255',
+        'nominal_proyek'    => 'required|numeric|min:0',
+        'price_per_piece'   => 'required|numeric|min:0',
+        'material_cost'     => 'required|numeric|min:0',
+        'quantity'          => 'required|integer|min:1',
+        'profit'            => 'required|numeric|min:0',
+        'convection_profit' => 'required|numeric|min:0',
+        'wage_per_piece'    => 'required|numeric|min:0',
+        'deadline'          => 'required|date|after_or_equal:today',
+        'status'            => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
+        'image'             => 'nullable|image|max:2048', // DIKEMBALIKAN
+    ]);
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('projects', 'public');
-        }
-
-        Project::create($data);
-
-        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil ditambahkan.');
+    if ($request->hasFile('image')) { // DIKEMBALIKAN
+        $data['image'] = $request->file('image')->store('projects', 'public'); // DIKEMBALIKAN
     }
+    // =============================================================
+
+    Project::create($data);
+
+    return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil ditambahkan.');
+}
 
      public function edit(Project $project)
     {
@@ -105,42 +105,45 @@ class ProjectController extends Controller
     }
 
     public function update(Request $request, Project $project)
-    {
-        $data = $request->validate([
-            'name'             => 'required|string|max:255',
-            'price_per_piece'  => 'required|numeric|min:0',
-            'material_cost'    => 'required|numeric|min:0', // Validasi baru
-            'quantity'         => 'required|integer|min:1',
-            'profit'           => 'required|numeric|min:0',
-            'convection_profit'=> 'required|numeric|min:0',
-            'wage_per_piece'   => 'required|numeric|min:0',
-            'deadline'         => 'required|date',
-            'status'           => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
-            'image'            => 'nullable|image|max:2048',
-        ]);
+{
+    $data = $request->validate([
+        'name'              => 'required|string|max:255',
+        'nominal_proyek'    => 'required|numeric|min:0', // Pastikan ini ada
+        'price_per_piece'   => 'required|numeric|min:0',
+        'material_cost'     => 'required|numeric|min:0',
+        'quantity'          => 'required|integer|min:1',
+        'profit'            => 'required|numeric|min:0',
+        'convection_profit' => 'required|numeric|min:0',
+        'wage_per_piece'    => 'required|numeric|min:0',
+        'deadline'          => 'required|date',
+        'status'            => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
+        'image'             => 'nullable|image|max:2048',
+    ]);
 
-        if ($request->hasFile('image')) {
-            if ($project->image) {
-                Storage::disk('public')->delete($project->image);
-            }
-            $data['image'] = $request->file('image')->store('projects', 'public');
-        }
-
-        $project->update($data);
-
-        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil diperbarui.');
-    }
-
-    public function destroy(Project $project)
-    {
+    if ($request->hasFile('image')) {
         if ($project->image) {
             Storage::disk('public')->delete($project->image);
         }
-
-        $project->delete();
-
-        return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil dihapus.');
+        $data['image'] = $request->file('image')->store('projects', 'public');
     }
+
+    $project->update($data);
+
+    return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil diperbarui.');
+}
+
+    public function destroy(Project $project)
+{
+    // =================== KEMBALIKAN KE 'image' ===================
+    if ($project->image) { // DIKEMBALIKAN
+        Storage::disk('public')->delete($project->image); // DIKEMBALIKAN
+    }
+    // =============================================================
+
+    $project->delete();
+
+    return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil dihapus.');
+}
     /**
  * @return \Illuminate\View\View
  */
@@ -183,37 +186,52 @@ class ProjectController extends Controller
      /**
      * Menampilkan halaman detail komprehensif untuk sebuah proyek.
      */
-    public function show(Project $project)
-    {
-        $project->load([
-            'investments' => fn($q) => $q->where('approved', true)->with('investor.user'),
-            'assignments.tailor.user',
-            'assignments.progress'
-        ]);
+     public function show(Project $project)
+{
+    // --- Data progress yang sudah ada (tidak berubah) ---
+    $project->load([
+        'investments' => fn($q) => $q->where('approved', true)->with('investor.user'),
+        'assignments.tailor.user',
+        'assignments.progress'
+    ]);
 
-        $investedQty = $project->investments->sum('qty');
-        $fundingPercentage = $project->quantity > 0 ? round(($investedQty / $project->quantity) * 100) : 0;
+    $investedQty = $project->investments->sum('qty');
+    $fundingPercentage = $project->quantity > 0 ? round(($investedQty / $project->quantity) * 100) : 0;
+    $completedQty = $project->assignments->flatMap->progress->sum('quantity_done');
+    $productionPercentage = $investedQty > 0 ? round(($completedQty / $investedQty) * 100) : 0;
 
-        $completedQty = $project->assignments->flatMap->progress->sum('quantity_done');
-        $productionPercentage = $investedQty > 0 ? round(($completedQty / $investedQty) * 100) : 0;
+    
+    // =================== PERHITUNGAN KEUANGAN (LOGIKA YANG BENAR) ===================
+    
+    // 1. Ambil Nominal per Pcs dari Buyer (langsung dari database)
+    $nominalPerPcs = $project->nominal_proyek;
+
+    // 2. Hitung Total Nominal dari Buyer secara dinamis
+    $totalNominalBuyer = $nominalPerPcs * $project->quantity;
+
+    // 3. Hitung semua estimasi lainnya (logika ini sudah benar)
+    $estimasiModalInvestor = $project->price_per_piece * $project->quantity;
+    $estimasiBiayaBahan = $project->material_cost * $project->quantity;
+    $estimasiUpahJahit = $project->wage_per_piece * $project->quantity;
+    $totalBiayaProduksi = $estimasiBiayaBahan + $estimasiUpahJahit;
+    $estimasiKeuntunganInvestor = $project->profit * $project->quantity;
+    $estimasiProfitKonveksi = $project->convection_profit * $project->quantity;
+
+    // =================== AKHIR PERHITUNGAN ===================
+
+    return view('admin.projects.show', compact(
+        'project',
+        'investedQty', 'fundingPercentage', 'completedQty', 'productionPercentage',
         
-        $totalFunds = $project->investments->sum('amount');
-        $potentialInvestorProfit = $project->profit * $investedQty;
-        $potentialConvectionProfit = $project->convection_profit * $investedQty;
-        $totalWageCost = $project->wage_per_piece * $completedQty;
-        $netPotentialProfit = $potentialConvectionProfit - ($project->wage_per_piece * $investedQty);
-        
-        return view('admin.projects.show', compact(
-            'project',
-            'investedQty',
-            'fundingPercentage',
-            'completedQty',
-            'productionPercentage',
-            'totalFunds',
-            'potentialInvestorProfit',
-            'potentialConvectionProfit',
-            'totalWageCost',
-            'netPotentialProfit'
-        ));
-    }
+        // --- Variabel Keuangan untuk View ---
+        'totalNominalBuyer',
+        'nominalPerPcs',
+        'estimasiModalInvestor',
+        'estimasiBiayaBahan',
+        'estimasiUpahJahit',
+        'totalBiayaProduksi',
+        'estimasiKeuntunganInvestor',
+        'estimasiProfitKonveksi'
+    ));
+}
 }

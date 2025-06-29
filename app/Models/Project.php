@@ -13,18 +13,20 @@ class Project extends Model
 {
 
     // Mass assignment
-  protected $fillable = [
-        'name',
-        'price_per_piece',
-        'material_cost', // <-- TAMBAHKAN INI
-        'quantity',
-        'profit',
-        'convection_profit',
-        'wage_per_piece',
-        'deadline',
-        'status',
-        'image',
-    ];
+ protected $fillable = [
+    'name',
+    'nominal_proyek', // Pastikan ini ada
+    'price_per_piece',
+    'material_cost',
+    'quantity',
+    'profit',
+    'convection_profit',
+    'wage_per_piece',
+    'deadline',
+    'image',
+    'status',
+    'description',
+];
 
     // Casting untuk tipe numerik
       protected $casts = [
@@ -34,6 +36,7 @@ class Project extends Model
         'profit' => 'float',
         'convection_profit' => 'float',
         'wage_per_piece' => 'float',
+        'nominal_proyek' => 'float'
     ];
     // Constants untuk status
     public const STATUS_ACTIVE   = 'active';

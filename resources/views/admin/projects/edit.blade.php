@@ -27,7 +27,11 @@
                             <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $project->name)" required />
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
                         </div>
-                        
+                        <div>
+    <x-input-label for="nominal_proyek" :value="__('Nominal Proyek dari Buyer (Rp)')" />
+    <x-text-input id="nominal_proyek" name="nominal_proyek" type="number" step="1000" class="mt-1 block w-full" :value="old('nominal_proyek', $project->nominal_proyek)" required />
+    <x-input-error :messages="$errors->get('nominal_proyek')" class="mt-2" />
+</div>
                         {{-- Kuantitas & Deadline --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>

@@ -9,37 +9,31 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Validation\Rule; // <-- TAMBAHKAN BARIS INI
 
 class ProfileController extends Controller
 {
     /**
      * Menampilkan halaman profil investor.
      */
-    public function index()
+     public function index()
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // =================== PERUBAHAN DIMULAI DI SINI ===================
-        //
-        // Menggunakan firstOrCreate untuk memastikan profil investor selalu ada.
-        // Ini akan mencari investor dengan user_id yang cocok, atau membuatnya jika tidak ada.
-        // Tindakan ini secara permanen mengatasi masalah di mana $investor bisa null.
         $investor = Investor::firstOrCreate(
             ['user_id' => $user->id],
             [
-                'name' => $user->name, 
+                'name'  => $user->name,
                 'email' => $user->email,
-                'phone' => '' // TAMBAHAN: Memberikan nilai default untuk 'phone'
+                // =================== KEMBALIKAN KE 'phone' ===================
+                'phone' => '' 
             ]
         );
-        // =================== PERUBAHAN SELESAI DI SINI ===================
 
-        // Dengan $investor yang dijamin ada, kalkulasi bisa dilanjutkan dengan aman.
         $totalInvested = $investor->investments()->where('approved', true)->sum('amount');
         $projectsCount = $investor->investments()->where('approved', true)->distinct('project_id')->count();
         
-        // Kalkulasi estimasi profit
         $estimatedProfit = DB::table('investments')
             ->join('projects', 'investments.project_id', '=', 'projects.id')
             ->where('investments.investor_id', $investor->id)
@@ -62,11 +56,18 @@ class ProfileController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $investor = $user->investor;
 
-        // Mengirim data user ke view PDF untuk ditampilkan di dokumen
-        $pdf = Pdf::loadView('investor.profile.mou_pdf', ['user' => $user]);
+        if (!$investor || !$investor->nik || !$investor->alamat) {
+            return redirect()->route('investor.profile.index')
+                             ->with('error', 'Harap lengkapi NIK dan Alamat pada profil Anda sebelum mengunduh MOU.');
+        }
 
-        // Membuat nama file yang unik untuk setiap user
+        $pdf = Pdf::loadView('investor.profile.mou_pdf', [
+            'user' => $user,
+            'investor' => $investor
+        ]);
+
         return $pdf->download('MOU-Investasi-' . $user->name . '.pdf');
     }
 
@@ -100,27 +101,37 @@ class ProfileController extends Controller
     /**
      * Menyimpan atau memperbarui profil investor.
      */
-    public function storeOrUpdate(Request $request)
+      public function storeOrUpdate(Request $request)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $investor = $user->investor; 
 
+        $nikRule = ['required', 'string', 'size:16'];
+        if ($investor) {
+            $nikRule[] = Rule::unique('investors')->ignore($investor->id);
+        } else {
+            $nikRule[] = Rule::unique('investors');
+        }
+
+        // =================== KEMBALIKAN KE 'phone' ===================
         $request->validate([
-            'name'  => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'name'   => 'required|string|max:255',
+            'phone'  => 'required|string|max:20', // DIUBAH
+            'nik'    => $nikRule,
+            'alamat' => 'required|string|max:1000',
         ]);
 
-        // Update nama pada tabel User
         $user->update(['name' => $request->name]);
 
-        // Update atau buat data pada tabel Investor yang terhubung
         Investor::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'phone'         => $request->phone,
-                'name'          => $request->name,
-                'email'         => $user->email,
-                'registered_at' => now(),
+                'phone'  => $request->phone, // DIUBAH
+                'nik'    => $request->nik,
+                'alamat' => $request->alamat,
+                'name'   => $request->name,
+                'email'  => $user->email,
             ]
         );
 
