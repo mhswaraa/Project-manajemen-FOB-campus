@@ -156,10 +156,10 @@
                     <p>Penjahit Borongan</p>
                 </td>
                 <td style="width: 50%; text-align: right;" class="invoice-details">
-                     <p><strong>Tanggal Terbit:</strong> {{ $invoice->created_at ? $invoice->created_at->isoFormat('D MMMM YYYY') : 'Tidak ditentukan' }}</p>
+                     <p><strong>Tanggal Terbit:</strong> {{ $invoice->issue_date ? $invoice->issue_date->isoFormat('D MMMM YYYY') : 'Tidak ditentukan' }}</p>
                      <p><strong>Batas Waktu:</strong> {{ $invoice->due_date ? $invoice->due_date->isoFormat('D MMMM YYYY') : 'Tidak ditentukan' }}</p>
                      @if($invoice->status == 'paid' && $invoice->payment_date)
-                        <p style="font-weight:bold; color: #28a745;"><strong>Tanggal Lunas:</strong> {{ $invoice->payment_date->isoFormat('D MMMM YYYY') }}</p>
+                         <p style="font-weight:bold; color: #28a745;"><strong>Tanggal Lunas:</strong> {{ $invoice->payment_date->isoFormat('D MMMM YYYY') }}</p>
                      @endif
                 </td>
             </tr>
@@ -169,42 +169,43 @@
             <thead>
                 <tr>
                     <th style="width:50%;">Deskripsi</th>
-                    <th style="width:15%; text-align:right;">Kuantitas</th>
+                    <th style="width:15%; text-align:right;">Kuantitas Diterima</th>
                     <th style="width:20%; text-align:right;">Harga Satuan</th>
                     <th style="width:15%; text-align:right;">Subtotal</th>
                 </tr>
             </thead>
             <tbody>
+                {{-- ==================================================================== --}}
+                {{-- AWAL PERUBAHAN: Menggunakan accepted_qty untuk kalkulasi --}}
+                {{-- ==================================================================== --}}
                 @foreach($invoice->progressItems as $item)
                 <tr>
                     <td>
                         <strong>Pengerjaan Proyek: {{ $item->assignment->project->name }}</strong><br>
                         <span style="font-size:11px; color: #666">Pencatatan tanggal: {{ $item->date->isoFormat('D MMM YYYY') }}</span>
                     </td>
-                    <td style="text-align:right;">{{ $item->quantity_done }} pcs</td>
+                    <td style="text-align:right;">{{ $item->accepted_qty }} pcs</td>
                     <td style="text-align:right;">Rp {{ number_format($item->assignment->project->wage_per_piece, 0, ',', '.') }}</td>
-                    <td style="text-align:right;">Rp {{ number_format($item->quantity_done * $item->assignment->project->wage_per_piece, 0, ',', '.') }}</td>
+                    <td style="text-align:right;">Rp {{ number_format($item->accepted_qty * $item->assignment->project->wage_per_piece, 0, ',', '.') }}</td>
                 </tr>
                 @endforeach
+                {{-- ==================================================================== --}}
+                {{-- AKHIR PERUBAHAN --}}
+                {{-- ==================================================================== --}}
             </tbody>
         </table>
         <div class="totals">
             <table>
-                <tr>
-                    <td style="width: 70%;">Subtotal</td>
-                    <td style="text-align: right;">Rp {{ number_format($invoice->subtotal, 0, ',', '.') }}</td>
-                </tr>
-                <tr>
-                    <td style="width: 70%;">Bonus (jika ada)</td>
-                    <td style="text-align: right;">Rp {{ number_format($invoice->discount ?? 0, 0, ',', '.') }}</td>
-                </tr>
+                {{-- PERUBAHAN: Menyederhanakan bagian total --}}
                 <tr class="grand-total">
-                    <td style="width: 70%;">Total Nominal yang Dibayarkan</td>
+                    <td style="width: 70%;">Total Tagihan</td>
                     <td style="text-align: right;">Rp {{ number_format($invoice->total_amount, 0, ',', '.') }}</td>
                 </tr>
             </table>
-        
-        
+        </div>
+    
+        <div style="clear: both;"></div>
+
         {{-- PENAMBAHAN: BAGIAN LAMPIRAN BUKTI TRANSFER --}}
         @if(isset($receiptImagePath))
         <div class="attachment-section">

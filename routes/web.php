@@ -105,6 +105,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('payouts/process', [AdminPayoutController::class, 'process'])->name('payouts.process');
     Route::get('payouts/{payout}', [AdminPayoutController::class, 'show'])->name('payouts.show');
     Route::get('payouts/{payout}/receipt', [AdminPayoutController::class, 'downloadReceipt'])->name('payouts.receipt');
+
+     // AWAL DARI ROUTE BARU UNTUK QC
+    Route::get('qc', [App\Http\Controllers\Admin\QcController::class, 'index'])->name('qc.index');
+    Route::post('qc/process/{progress}', [App\Http\Controllers\Admin\QcController::class, 'process'])->name('qc.process');
+    // AKHIR DARI ROUTE BARU UNTUK QC
 });
 
 

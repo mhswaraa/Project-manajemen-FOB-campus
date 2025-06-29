@@ -80,6 +80,7 @@
                      <ul x-show="open" x-collapse class="mt-1 space-y-1 pl-6">
                         <li><a href="{{ route('admin.penjahits.index') }}" @class(['block rounded-lg px-4 py-2 text-sm font-medium transition', 'text-indigo-700 font-semibold' => request()->routeIs('admin.penjahits.*'), 'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.penjahits.*')])>Daftar Penjahit</a></li>
                         <li><a href="{{ route('admin.specializations.index') }}" @class(['block rounded-lg px-4 py-2 text-sm font-medium transition', 'text-indigo-700 font-semibold' => request()->routeIs('admin.specializations.*'), 'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.specializations.*')])>Kelola Spesialisasi</a></li>
+                        <li><a href="{{ route('admin.qc.index') }}" @class(['block rounded-lg px-4 py-2 text-sm font-medium transition', 'text-indigo-700 font-semibold' => request()->routeIs('admin.specializations.*'), 'text-gray-500 hover:bg-gray-100 hover:text-gray-700' => !request()->routeIs('admin.specializations.*')])>QC</a></li>
                     </ul>
                 </li>
 

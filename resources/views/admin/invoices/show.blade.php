@@ -47,9 +47,18 @@
           <div class="bg-white p-6 rounded-lg shadow-md">
             <div class="flex justify-between items-start"><div><h2 class="text-2xl font-bold text-gray-800">Invoice #{{ $invoice->invoice_number }}</h2><p class="text-gray-500">Diterbitkan oleh: <span class="font-medium">{{ $invoice->tailor->user->name }}</span></p><p class="text-sm text-gray-500">Tanggal: {{ $invoice->issue_date->format('d F Y') }}</p></div><span @class(['px-3 py-1 text-sm font-semibold rounded-full', 'bg-yellow-100 text-yellow-800' => $invoice->status == 'pending', 'bg-green-100 text-green-800' => $invoice->status == 'paid'])>{{ ucfirst($invoice->status) }}</span></div>
             <div class="mt-6 pt-4 border-t"><h3 class="text-lg font-medium text-gray-900 mb-4">Rincian Pekerjaan</h3><div class="space-y-2 max-h-72 overflow-y-auto pr-2">
+                {{-- ==================================================================== --}}
+                {{-- AWAL PERUBAHAN: Menampilkan jumlah yang diterima (accepted_qty) --}}
+                {{-- ==================================================================== --}}
                 @foreach($invoice->progressItems as $item)
-                <div class="flex justify-between text-sm"><p class="text-gray-700">{{ $item->assignment->project->name }} ({{ $item->quantity_done }} pcs)</p><p class="text-gray-900">Rp {{ number_format($item->quantity_done * $item->assignment->project->wage_per_piece, 0,',','.') }}</p></div>
+                <div class="flex justify-between text-sm">
+                  <p class="text-gray-700">{{ $item->assignment->project->name }} ({{ $item->accepted_qty }} pcs)</p>
+                  <p class="text-gray-900">Rp {{ number_format($item->accepted_qty * $item->assignment->project->wage_per_piece, 0,',','.') }}</p>
+                </div>
                 @endforeach
+                {{-- ==================================================================== --}}
+                {{-- AKHIR PERUBAHAN --}}
+                {{-- ==================================================================== --}}
             </div></div>
             <div class="flex justify-end mt-4 pt-4 border-t"><span class="text-lg font-bold text-gray-800">Total: Rp {{ number_format($invoice->total_amount, 0,',','.') }}</span></div>
           </div>
@@ -73,7 +82,13 @@
               <h3 class="text-lg font-medium text-gray-900">Detail Pembayaran</h3>
               <div class="mt-4 space-y-3 text-sm">
                   <div class="flex justify-between"><dt class="text-gray-500">Tgl Bayar</dt><dd class="font-semibold text-gray-900">{{ $invoice->payment_date->format('d F Y') }}</dd></div>
-                  <div class="flex justify-between"><dt class="text-gray-500">Diproses oleh</dt><dd class="font-semibold text-gray-900">{{ $invoice->processor->name }}</dd></div>
+                  
+                  {{-- AWAL PERBAIKAN: Menambahkan pengecekan untuk menghindari error jika processor tidak ada --}}
+                  @if($invoice->processor)
+                    <div class="flex justify-between"><dt class="text-gray-500">Diproses oleh</dt><dd class="font-semibold text-gray-900">{{ $invoice->processor->name }}</dd></div>
+                  @endif
+                  {{-- AKHIR PERUBAHAN --}}
+
               </div>
               @if($invoice->receipt_path)
               <a href="{{ asset('storage/' . $invoice->receipt_path) }}" target="_blank" class="mt-6 w-full flex items-center justify-center gap-2 text-center px-4 py-3 bg-gray-100 text-gray-800 text-sm font-semibold rounded-lg hover:bg-gray-200">
@@ -116,3 +131,4 @@
     </main>
   </div>
 </x-app-layout>
+```

@@ -20,7 +20,7 @@
       
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800">Buat Invoice Baru</h1>
-        <p class="text-gray-500 mt-1">Pilih pekerjaan yang sudah selesai untuk ditagihkan ke admin.</p>
+        <p class="text-gray-500 mt-1">Pilih pekerjaan yang sudah disetujui QC untuk ditagihkan.</p>
       </div>
 
       <form action="{{ route('penjahit.invoices.store') }}" method="POST">
@@ -28,20 +28,28 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {{-- Kolom Kiri: Daftar Pekerjaan --}}
           <div class="lg:col-span-2 bg-white shadow-md rounded-lg">
-            <div class="p-4 border-b"><h3 class="font-semibold">Pekerjaan Selesai & Belum Ditagih</h3></div>
+            <div class="p-4 border-b"><h3 class="font-semibold">Pekerjaan Diterima QC & Belum Ditagih</h3></div>
             <div class="max-h-96 overflow-y-auto">
               <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50 sticky top-0"><tr><th class="p-4 w-4"></th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detail Pekerjaan</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upah</th></tr></thead>
+                <thead class="bg-gray-50 sticky top-0"><tr><th class="p-4 w-4"></th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detail Pekerjaan</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Diterima</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upah</th></tr></thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                   @forelse ($unbilledProgress as $progress)
                     <tr id="progress-{{ $progress->id }}" data-wage="{{ $progress->wage }}">
                       <td class="p-4"><input type="checkbox" name="progress_ids[]" value="{{ $progress->id }}" x-model="selectedProgress" @change="calculateTotal" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"></td>
                       <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">{{ $progress->assignment->project->name }}</div><div class="text-sm text-gray-500">Tgl Lapor: {{ $progress->date->format('d M Y') }}</div></td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $progress->quantity_done }} pcs</td>
+                      
+                      {{-- ==================================================================== --}}
+                      {{-- AWAL PERUBAHAN: Menampilkan jumlah yang diterima QC --}}
+                      {{-- ==================================================================== --}}
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-semibold">{{ $progress->accepted_qty }} pcs</td>
+                      {{-- ==================================================================== --}}
+                      {{-- AKHIR PERUBAHAN --}}
+                      {{-- ==================================================================== --}}
+                      
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">Rp {{ number_format($progress->wage, 0, ',', '.') }}</td>
                     </tr>
                   @empty
-                    <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Tidak ada pekerjaan selesai yang bisa ditagih saat ini.</td></tr>
+                    <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Tidak ada pekerjaan yang disetujui QC dan bisa ditagih saat ini.</td></tr>
                   @endforelse
                 </tbody>
               </table>

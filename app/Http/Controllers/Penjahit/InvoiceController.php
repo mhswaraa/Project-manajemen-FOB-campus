@@ -14,44 +14,71 @@ class InvoiceController extends Controller
 {
     /**
      * Menampilkan halaman untuk membuat invoice baru.
+     * Logika diperbarui untuk hanya menampilkan pekerjaan yang sudah disetujui QC.
      */
     public function create()
     {
         $tailor = Auth::user()->tailor;
 
+        // ====================================================================
+        // AWAL PERUBAHAN
+        // ====================================================================
         $unbilledProgress = TailorProgress::whereHas('assignment', function ($query) use ($tailor) {
             $query->where('tailor_id', $tailor->tailor_id);
         })
-        ->whereNull('invoice_id')
+        ->whereNull('invoice_id') // Belum ditagih
+        ->where('status', 'approved') // HARUS sudah disetujui QC
+        ->where('accepted_qty', '>', 0) // HARUS ada item yang diterima
         ->with('assignment.project')
         ->get()
         ->map(function ($progress) {
-            $progress->wage = $progress->quantity_done * $progress->assignment->project->wage_per_piece;
+            // Hitung upah berdasarkan jumlah yang DITERIMA (accepted_qty)
+            $progress->wage = $progress->accepted_qty * $progress->assignment->project->wage_per_piece;
             return $progress;
         });
+        // ====================================================================
+        // AKHIR PERUBAHAN
+        // ====================================================================
 
         return view('penjahit.invoices.create', compact('unbilledProgress'));
     }
 
     /**
      * Menyimpan invoice baru ke database.
+     * Logika diperbarui untuk menghitung total berdasarkan accepted_qty.
      */
     public function store(Request $request)
     {
         $request->validate([
             'progress_ids' => 'required|array|min:1',
-            'progress_ids.*' => 'exists:tailor_progress,id',
+            // Pastikan progress_id yang dikirim ada dan milik penjahit ini
+            'progress_ids.*' => [
+                'exists:tailor_progress,id',
+                function ($attribute, $value, $fail) {
+                    $progress = TailorProgress::find($value);
+                    if ($progress->status !== 'approved' || !is_null($progress->invoice_id)) {
+                        $fail('Item yang dipilih tidak valid atau sudah ditagih.');
+                    }
+                }
+            ],
         ]);
 
         $tailor = Auth::user()->tailor;
         $progressIds = $request->input('progress_ids');
 
-        // PERBAIKAN: Gunakan foreach untuk kalkulasi yang lebih eksplisit
+        // ====================================================================
+        // AWAL PERUBAHAN
+        // ====================================================================
         $progressItems = TailorProgress::with('assignment.project')->find($progressIds);
+        
         $totalAmount = 0;
         foreach ($progressItems as $item) {
-            $totalAmount += $item->quantity_done * $item->assignment->project->wage_per_piece;
+            // Hitung total HANYA berdasarkan jumlah yang diterima QC
+            $totalAmount += $item->accepted_qty * $item->assignment->project->wage_per_piece;
         }
+        // ====================================================================
+        // AKHIR PERUBAHAN
+        // ====================================================================
 
         if ($totalAmount <= 0) {
             return back()->with('error', 'Gagal membuat invoice. Total tagihan tidak boleh nol.');

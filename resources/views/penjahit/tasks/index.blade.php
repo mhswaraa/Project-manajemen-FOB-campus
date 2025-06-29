@@ -9,22 +9,43 @@
         <p class="text-gray-500 mt-1">Berikut adalah semua proyek yang sedang dan telah Anda kerjakan.</p>
       </div>
 
-      {{-- Menampilkan pesan sukses setelah mengambil tugas --}}
+      {{-- Menampilkan pesan sukses --}}
       @if(session('success'))
-          <div class="mb-6 p-4 bg-green-100 text-green-800 rounded-lg shadow-sm">
-              {{ session('success') }}
+        <div class="mb-6 p-4 bg-green-100 text-green-800 rounded-lg shadow-sm">
+            {{ session('success') }}
+        </div>
+      @endif
+      @if(session('error'))
+          <div class="mb-6 p-4 bg-red-100 text-red-800 rounded-lg shadow-sm">
+              {{ session('error') }}
           </div>
       @endif
 
       {{-- Layout Kartu --}}
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         @forelse ($assignments as $task)
+          {{-- ==================================================================== --}}
+          {{-- AWAL PERUBAHAN: Logika kalkulasi disesuaikan dengan status QC --}}
+          {{-- ==================================================================== --}}
           @php
             $project = $task->project;
-            $done = $task->progress->sum('quantity_done');
             $assigned = $task->assigned_qty;
-            $percentage = $assigned > 0 ? round(($done / $assigned) * 100) : 0;
+
+            // Hitung progres HANYA dari yang sudah diterima QC
+            $acceptedQty = $task->progress->where('status', 'approved')->sum('accepted_qty');
+            
+            // Hitung juga yang masih menunggu QC untuk ditampilkan sebagai catatan
+            $pendingQty = $task->progress->where('status', 'pending_qc')->sum('quantity_done');
+            
+            $percentage = $assigned > 0 ? round(($acceptedQty / $assigned) * 100) : 0;
+            
+            // Logika untuk tombol hapus: bisa dihapus jika belum ada laporan sama sekali
+            $hasAnyProgress = $task->progress->isNotEmpty();
           @endphp
+          {{-- ==================================================================== --}}
+          {{-- AKHIR PERUBAHAN --}}
+          {{-- ==================================================================== --}}
+
           <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
             <div class="relative">
               @if($project->image)
@@ -51,36 +72,38 @@
                 Deadline: {{ \Carbon\Carbon::parse($project->deadline)->format('d M Y') }}
               </p>
 
+              {{-- PERUBAHAN: Tampilan progres diperbarui --}}
               <div class="mt-4">
                 <div class="flex justify-between items-center mb-1 text-sm">
-                  <span class="font-medium text-gray-600">Progress</span>
-                  <span class="font-semibold text-teal-600">{{ $done }} / {{ $assigned }} pcs</span>
+                  <span class="font-medium text-gray-600">Progress Diterima</span>
+                  <span class="font-semibold text-teal-600">{{ $acceptedQty }} / {{ $assigned }} pcs</span>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2.5">
                   <div class="bg-teal-500 h-2.5 rounded-full" style="width: {{ $percentage }}%"></div>
                 </div>
+                 @if($pendingQty > 0)
+                    <p class="text-xs text-yellow-600 italic mt-1 text-right">{{ $pendingQty }} pcs menunggu QC.</p>
+                @endif
               </div>
 
-               {{-- AWAL PERUBAHAN --}}
-      <div class="mt-5 pt-4 border-t border-gray-100 flex-grow flex items-end">
-        <div class="w-full flex items-center gap-2">
-            <a href="{{ route('penjahit.tasks.show', $task) }}" class="flex-1 text-center px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 shadow-md">
-                Update & Lihat Detail
-            </a>
+              <div class="mt-5 pt-4 border-t border-gray-100 flex-grow flex items-end">
+                <div class="w-full flex items-center gap-2">
+                  <a href="{{ route('penjahit.tasks.show', $task) }}" class="flex-1 text-center px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 shadow-md">
+                    Update & Lihat Detail
+                  </a>
 
-            {{-- Tampilkan tombol Batal HANYA jika progres masih 0 --}}
-            @if($done == 0)
-                <form action="{{ route('penjahit.tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Anda yakin ingin membatalkan tugas ini? Kuantitas yang Anda ambil akan dikembalikan.')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700" title="Batalkan Tugas">
+                  {{-- PERUBAHAN: Logika tombol hapus disesuaikan --}}
+                  @if(!$hasAnyProgress)
+                    <form action="{{ route('penjahit.tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Anda yakin ingin membatalkan tugas ini?');">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700" title="Batalkan Tugas">
                         <x-heroicon-o-trash class="w-5 h-5" />
-                    </button>
-                </form>
-            @endif
-        </div>
-      </div>
-      {{-- AKHIR PERUBAHAN --}}
+                      </button>
+                    </form>
+                  @endif
+                </div>
+              </div>
             </div>
           </div>
         @empty
