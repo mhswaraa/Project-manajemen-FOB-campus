@@ -14,6 +14,13 @@
         <h1 class="text-3xl font-bold text-gray-800">Konfirmasi Pengambilan Tugas</h1>
       </div>
 
+      @if(session('error'))
+        <div class="mb-6 p-4 bg-red-100 text-red-800 rounded-lg shadow-sm border border-red-200" role="alert">
+            <p class="font-semibold">Terjadi Kesalahan</p>
+            <p>{{ session('error') }}</p>
+        </div>
+      @endif
+
       {{-- Layout Utama 2 Kolom --}}
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
         

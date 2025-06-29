@@ -61,11 +61,26 @@
                 </div>
               </div>
 
-              <div class="mt-5 pt-4 border-t border-gray-100 flex-grow flex items-end">
-                <a href="{{ route('penjahit.tasks.show', $task) }}" class="w-full text-center px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 shadow-md">
-                  Update & Lihat Detail
-                </a>
-              </div>
+               {{-- AWAL PERUBAHAN --}}
+      <div class="mt-5 pt-4 border-t border-gray-100 flex-grow flex items-end">
+        <div class="w-full flex items-center gap-2">
+            <a href="{{ route('penjahit.tasks.show', $task) }}" class="flex-1 text-center px-4 py-2 bg-gray-800 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 shadow-md">
+                Update & Lihat Detail
+            </a>
+
+            {{-- Tampilkan tombol Batal HANYA jika progres masih 0 --}}
+            @if($done == 0)
+                <form action="{{ route('penjahit.tasks.destroy', $task) }}" method="POST" onsubmit="return confirm('Anda yakin ingin membatalkan tugas ini? Kuantitas yang Anda ambil akan dikembalikan.')">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700" title="Batalkan Tugas">
+                        <x-heroicon-o-trash class="w-5 h-5" />
+                    </button>
+                </form>
+            @endif
+        </div>
+      </div>
+      {{-- AKHIR PERUBAHAN --}}
             </div>
           </div>
         @empty

@@ -35,4 +35,28 @@ class TaskController extends Controller
         $assignment->load('project', 'progress');
         return view('penjahit.tasks.show', compact('assignment'));
     }
+    public function destroy(ProjectTailor $assignment)
+    {
+        // 1. Otorisasi: Pastikan penjahit hanya bisa menghapus tugasnya sendiri.
+        if ($assignment->tailor_id !== Auth::user()->tailor->tailor_id) {
+            abort(403, 'AKSI TIDAK DIIZINKAN.');
+        }
+
+        // 2. Validasi Bisnis: Cek apakah sudah ada progres yang dilaporkan.
+        // `progress()` adalah nama relasi dari model ProjectTailor ke TailorProgress.
+        // Jika nama relasi Anda berbeda, sesuaikan.
+        if ($assignment->progress()->exists()) {
+            return redirect()
+                ->route('penjahit.tasks.index')
+                ->with('error', 'Tugas tidak bisa dibatalkan karena progres sudah dilaporkan.');
+        }
+
+        // 3. Eksekusi: Hapus assignment jika validasi lolos.
+        $assignment->delete();
+
+        // 4. Redirect dengan pesan sukses.
+        return redirect()
+            ->route('penjahit.tasks.index')
+            ->with('success', 'Tugas berhasil dibatalkan dan dikembalikan ke daftar proyek.');
+    }
 }

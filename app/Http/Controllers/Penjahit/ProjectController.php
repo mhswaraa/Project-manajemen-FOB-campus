@@ -104,27 +104,41 @@ class ProjectController extends Controller
      */
     public function store(Request $request, Project $project)
     {
-        // Ambil tailor id dari user auth
+        // Ambil tailor dari user yang sedang login
         $tailor = Auth::user()->tailor;
+
+        // =======================================================
+        // AWAL DARI KODE BARU: Pengecekan Duplikasi
+        // =======================================================
+        $existingAssignment = ProjectTailor::where('project_id', $project->id)
+                                             ->where('tailor_id', $tailor->tailor_id)
+                                             ->first();
+
+        if ($existingAssignment) {
+            return back()
+                ->withInput()
+                ->with('error', 'Anda sudah mengambil proyek ini. Silakan kerjakan tugas yang ada di halaman "Tugas Saya".');
+        }
+        // =======================================================
+        // AKHIR DARI KODE BARU
+        // =======================================================
 
         $data = $request->validate([
             'qty' => 'required|integer|min:1',
         ]);
 
+        // Hitung sisa kuota dengan cara yang sama seperti di method create()
+        $totalInvested = $project->investments()->where('approved', true)->sum('qty');
+        $alreadyTaken = $project->assignments()->sum('assigned_qty');
+        $availableQty = max(0, $totalInvested - $alreadyTaken);
 
-       // Hitung sisa kuota dengan cara yang sama seperti di method create()
-    $totalInvested = $project->investments()->where('approved', true)->sum('qty');
-    $alreadyTaken = $project->assignments()->sum('assigned_qty');
-    $availableQty = max(0, $totalInvested - $alreadyTaken);
-    // --- Akhir bagian perubahan ---
-
-    if ($data['qty'] > $availableQty) {
-        return back()
-            ->withInput()
-            ->withErrors([
-                'qty' => "Jumlah melebihi sisa tersedia ({$availableQty} pcs)."
-            ]);
-    }
+        if ($data['qty'] > $availableQty) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'qty' => "Jumlah melebihi sisa tersedia ({$availableQty} pcs)."
+                ]);
+        }
 
         // Simpan assignment ke tabel project_tailors
         ProjectTailor::create([

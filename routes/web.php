@@ -166,6 +166,8 @@ Route::middleware(['auth', 'role:penjahit'])->prefix('penjahit')->name('penjahit
         Route::post('projects/{project}/take', [PenjahitProjectController::class, 'store'])->name('projects.store');
         Route::get('tasks', [PenjahitTaskController::class, 'index'])->name('tasks.index');
         Route::get('tasks/{assignment}', [PenjahitTaskController::class, 'show'])->name('tasks.show');
+        // TAMBAHKAN ROUTE DI BAWAH INI
+        Route::delete('tasks/{assignment}', [PenjahitTaskController::class, 'destroy'])->name('tasks.destroy');
         Route::post('tasks/{assignment}/progress', [PenjahitProgressController::class, 'store'])->name('tasks.progress.store');
         Route::get('progress/{progress}/edit', [PenjahitProgressController::class, 'edit'])->name('tasks.progress.edit');
         Route::put('progress/{progress}', [PenjahitProgressController::class, 'update'])->name('tasks.progress.update');
