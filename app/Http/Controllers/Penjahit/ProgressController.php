@@ -11,44 +11,63 @@ use Carbon\Carbon;
 class ProgressController extends Controller
 {
     /**
-     * Menyimpan atau memperbarui progres harian untuk sebuah tugas.
+     * Menyimpan laporan progres baru dari penjahit.
      */
     public function store(Request $request, ProjectTailor $assignment)
     {
-        // 1. Validasi input dasar. Nama field kembali menjadi 'date'.
+        // 1. Validasi input dasar
         $validated = $request->validate([
             'quantity_done' => 'required|integer|min:1',
-            'notes' => 'nullable|string',
-            'date' => 'required|date', // <-- PERBAIKAN: Kembali ke 'date'
+            'notes'         => 'nullable|string',
+            'date'          => 'required|date',
         ]);
 
-        $reportDate = Carbon::parse($validated['date'])->startOfDay();
+        // ====================================================================
+        // AWAL PERBAIKAN: Logika validasi yang lebih akurat
+        // ====================================================================
 
         // 2. Validasi Logika Bisnis
-        // Ambil progres dari hari-hari lain
-        // PERBAIKAN: Kembali menggunakan kolom 'date'
-        $otherDaysProgress = $assignment->progress()
-            ->whereDate('date', '!=', $reportDate) // <-- PERBAIKAN
+        
+        // Langkah A: Hitung jumlah yang sudah final diterima oleh QC.
+        $totalAccepted = $assignment->progress()->sum('accepted_qty');
+
+        // Langkah B: Hitung kuota yang tersisa berdasarkan yang sudah diterima.
+        $remainingAfterAcceptance = $assignment->assigned_qty - $totalAccepted;
+
+        // Langkah C: Hitung berapa banyak yang sudah dilaporkan tapi masih menunggu QC.
+        // Pengecualian 'whereDate' diperlukan untuk kasus update-or-create pada hari yang sama.
+        $reportDate = Carbon::parse($validated['date'])->startOfDay();
+        $totalPending = $assignment->progress()
+            ->where('status', 'pending')
+            ->whereDate('date', '!=', $reportDate)
             ->sum('quantity_done');
 
-        $newTotalProgress = $otherDaysProgress + $validated['quantity_done'];
+        // Langkah D: Kuota yang *sebenarnya* bisa dilaporkan sekarang.
+        $maxAllowedToReport = $remainingAfterAcceptance - $totalPending;
 
-        if ($newTotalProgress > $assignment->assigned_qty) {
-            $remainingQty = $assignment->assigned_qty - $otherDaysProgress;
+        // Langkah E: Validasi input baru terhadap kuota yang sebenarnya.
+        if ($validated['quantity_done'] > $maxAllowedToReport) {
             return back()
                 ->withInput()
-                ->with('error', "Jumlah total progres ({$newTotalProgress} pcs) melebihi kuota tugas ({$assignment->assigned_qty} pcs). Anda hanya bisa melaporkan maksimal {$remainingQty} pcs lagi.");
+                ->with('error', "Laporan Anda ({$validated['quantity_done']} pcs) melebihi sisa kuota yang tersedia. Anda hanya bisa melaporkan maksimal {$maxAllowedToReport} pcs lagi.");
         }
         
-        // 3. Eksekusi: Simpan atau perbarui data
-        // PERBAIKAN: Kembali ke 'progress()' dan menggunakan kolom 'date'
+        // ====================================================================
+        // AKHIR PERBAIKAN
+        // ====================================================================
+        
+        // 3. Simpan atau perbarui data.
         $assignment->progress()->updateOrCreate(
             [
-                'date' => $reportDate, // <-- PERBAIKAN
+                'date' => $reportDate,
             ],
             [
                 'quantity_done' => $validated['quantity_done'],
-                'notes' => $validated['notes'],
+                'notes'         => $validated['notes'],
+                'status'        => 'pending', // Selalu set ke pending saat ada laporan/update baru
+                'accepted_qty'  => null,
+                'rejected_qty'  => null,
+                'qc_notes'      => null,
             ]
         );
 
@@ -61,14 +80,13 @@ class ProgressController extends Controller
      */
     public function edit(TailorProgress $progress)
     {
-        // Otorisasi bisa ditambahkan di sini jika perlu
         return view('penjahit.progress.edit', compact('progress'));
     }
 
     /**
-     * Memperbarui data progres di database.
+     * Memperbarui data progres yang sudah ada.
      */
-     public function update(Request $request, TailorProgress $progress)
+    public function update(Request $request, TailorProgress $progress)
     {
         // 1. Validasi input dasar
         $validated = $request->validate([
@@ -76,27 +94,35 @@ class ProgressController extends Controller
             'notes' => 'nullable|string',
         ]);
         
-        // 2. Validasi Logika Bisnis: Cek agar total tidak melebihi kuota
+        // 2. Validasi Logika Bisnis (menggunakan logika yang sama dengan 'store')
         $assignment = $progress->assignment;
         
-        // Ambil total progres yang sudah dilaporkan di hari-hari LAIN (tidak termasuk hari yang diedit)
-        $otherDaysProgress = $assignment->progress()
+        $totalAccepted = $assignment->progress()->sum('accepted_qty');
+        $remainingAfterAcceptance = $assignment->assigned_qty - $totalAccepted;
+
+        // Pengecualian 'where id' diperlukan agar tidak menghitung laporan yang sedang diedit ini.
+        $totalPending = $assignment->progress()
+            ->where('status', 'pending')
             ->where('id', '!=', $progress->id)
             ->sum('quantity_done');
             
-        // Hitung total progres JIKA laporan ini diperbarui
-        $newTotalProgress = $otherDaysProgress + $validated['quantity_done'];
-        
-        // Jika total baru melebihi kuota, kembalikan dengan error
-        if ($newTotalProgress > $assignment->assigned_qty) {
-            $allowedQty = $assignment->assigned_qty - $otherDaysProgress;
+        $maxAllowedToReport = $remainingAfterAcceptance - $totalPending;
+
+        if ($validated['quantity_done'] > $maxAllowedToReport) {
             return back()
                 ->withInput()
-                ->with('error', "Jumlah total progres ({$newTotalProgress} pcs) melebihi kuota tugas ({$assignment->assigned_qty} pcs). Anda hanya bisa memasukkan maksimal {$allowedQty} pcs untuk entri ini.");
+                ->with('error', "Laporan Anda ({$validated['quantity_done']} pcs) melebihi sisa kuota yang tersedia. Anda hanya bisa memasukkan maksimal {$maxAllowedToReport} pcs untuk entri ini.");
         }
 
         // 3. Eksekusi pembaruan data
-        $progress->update($validated);
+        $progress->update([
+            'quantity_done' => $validated['quantity_done'],
+            'notes'         => $validated['notes'],
+            'status'        => 'pending', // Reset status ke pending karena ada perubahan
+            'accepted_qty'  => null,
+            'rejected_qty'  => null,
+            'qc_notes'      => null,
+        ]);
 
         return redirect()->route('penjahit.tasks.show', $progress->assignment_id)
                          ->with('success', 'Laporan progres berhasil diperbarui.');

@@ -13,18 +13,17 @@ class PayoutController extends Controller
      */
     public function index()
     {
+        // 1. Dapatkan investor yang sedang login
         $investor = Auth::user()->investor;
 
-        if (!$investor) {
-            return redirect()->route('investor.profile')->with('warning', 'Harap lengkapi profil Anda terlebih dahulu.');
-        }
-
-        // Ambil semua payout melalui relasi yang akan kita buat di model Investor
+        // 2. Ambil data payout melalui relasi investor
+        //    dan urutkan berdasarkan kolom 'paid_at' yang benar.
         $payouts = $investor->payouts()
-                           ->with(['investment.project', 'processor']) // Eager load relasi
-                           ->latest('payment_date')
-                           ->paginate(15);
+                            ->with('investment.project') // Eager load untuk efisiensi
+                            ->latest('paid_at') // <-- INI PERBAIKANNYA (latest() adalah shortcut untuk orderBy('paid_at', 'desc'))
+                            ->paginate(10);
 
+        // 3. Kirim data ke view
         return view('investor.payouts.index', compact('payouts'));
     }
 }

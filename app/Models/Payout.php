@@ -9,26 +9,34 @@ class Payout extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     * Disesuaikan agar HANYA berisi kolom yang diisi oleh PayoutController.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'investment_id',
-        'profit_amount',
-        'payment_date',
+        'amount',
+        'paid_at',
         'receipt_path',
-        'notes',
-        'processed_by_user_id',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
-        'payment_date' => 'date',
+        'paid_at' => 'datetime',
     ];
 
+    /**
+     * Mendefinisikan relasi "milik" ke model Investment.
+     * Ini adalah satu-satunya relasi yang kita butuhkan saat ini.
+     */
     public function investment()
     {
         return $this->belongsTo(Investment::class);
-    }
-
-    public function processor()
-    {
-        return $this->belongsTo(User::class, 'processed_by_user_id');
     }
 }

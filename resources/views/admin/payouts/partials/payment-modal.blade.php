@@ -11,10 +11,10 @@
                 {{-- PERUBAHAN: Form diperbaiki agar berfungsi --}}
                 <form method="POST" action="{{ route('admin.payouts.process') }}" enctype="multipart/form-data">
                     @csrf
-                    
-                    {{-- Input tersembunyi untuk mengirim ID investasi yang akan dibayar --}}
-                    <input type="hidden" name="investment_ids[]" :value="selectedInvestment.id">
-
+                    {{-- ================================= PERUBAHAN DI SINI ================================= --}}
+                    {{-- Input tersembunyi untuk mengirim ID investasi tunggal yang akan dibayar --}}
+                    <input type="hidden" name="investment_id" :value="selectedInvestment.id">
+                    {{-- =================================================================================== --}}
                     <div class="p-6">
                         <h3 class="text-lg font-medium text-gray-900">Konfirmasi Pembayaran Profit</h3>
                         <div class="mt-4 space-y-2 text-sm">

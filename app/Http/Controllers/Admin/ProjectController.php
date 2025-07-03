@@ -33,13 +33,13 @@ class ProjectController extends Controller
         ->get();
 
         // Hitung statistik untuk kartu ringkasan
-        $activeProjectsCount = $projects->where('status', 'active')->count();
+        $activeProjectsCount = $projects->where('status', 'in_progress')->count();
         // PERUBAHAN: Logika proyek selesai disesuaikan
         $completedProjectsCount = $projects->filter(function($p) {
             // Sebuah proyek dianggap selesai jika jumlah yang diterima QC >= target kuantitas proyek
             return ($p->production_accepted_qty ?? 0) >= $p->quantity;
         })->count();
-        $fundingNeededCount = $projects->where('status', 'active')->filter(function($p) {
+        $fundingNeededCount = $projects->where('status', 'in_progress')->filter(function($p) {
             return ($p->invested_qty ?? 0) < $p->quantity;
         })->count();
 

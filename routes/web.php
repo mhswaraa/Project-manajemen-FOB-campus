@@ -105,11 +105,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('payouts/process', [AdminPayoutController::class, 'process'])->name('payouts.process');
     Route::get('payouts/{payout}', [AdminPayoutController::class, 'show'])->name('payouts.show');
     Route::get('payouts/{payout}/receipt', [AdminPayoutController::class, 'downloadReceipt'])->name('payouts.receipt');
+    
+    // ================== TAMBAHKAN BARIS INI ==================
+    Route::get('payouts/{payout}/pdf', [AdminPayoutController::class, 'downloadPdf'])->name('payouts.pdf');
+    // =======================================================
 
      // AWAL DARI ROUTE BARU UNTUK QC
     Route::get('qc', [App\Http\Controllers\Admin\QcController::class, 'index'])->name('qc.index');
     Route::post('qc/process/{progress}', [App\Http\Controllers\Admin\QcController::class, 'process'])->name('qc.process');
-    // AKHIR DARI ROUTE BARU UNTUK QC
+    Route::get('qc/{progress}', [App\Http\Controllers\Admin\QcController::class, 'show'])->name('qc.show');
+    // ... rute qc.index dan qc.process ...
 });
 
 

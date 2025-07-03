@@ -10,26 +10,18 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::table('tailor_progress', function (Blueprint $table) {
-            // PERBAIKAN: Hapus foreign key dengan merujuk pada nama kolomnya.
-            // Ini adalah cara yang lebih andal.
-            $table->dropForeign(['assignment_id']);
-        });
+{
+    Schema::table('project_tailor', function (Blueprint $table) {
+        // Baris ini aman jika foreign key-nya masih ada
+        $table->dropForeign(['project_id']);
+        $table->dropForeign(['tailor_id']);
+    });
 
-        // Setelah foreign key dilepas, sekarang kita aman untuk menghapus unique index.
-        Schema::table('project_tailor', function (Blueprint $table) {
-            $table->dropUnique('project_tailor_project_id_tailor_id_unique');
-        });
-
-        // Pasang kembali foreign key constraint untuk menjaga integritas data.
-        Schema::table('tailor_progress', function (Blueprint $table) {
-            $table->foreign('assignment_id')
-                  ->references('id')
-                  ->on('project_tailor')
-                  ->onDelete('cascade');
-        });
-    }
+    Schema::table('tailor_progress', function (Blueprint $table) {
+        // Karena foreign key ini sudah tidak ada, kita lewati saja proses penghapusannya.
+        // $table->dropForeign('tailor_progress_assignment_id_foreign'); // <-- DIKOMENTARI
+    });
+}
 
     /**
      * Reverse the migrations.

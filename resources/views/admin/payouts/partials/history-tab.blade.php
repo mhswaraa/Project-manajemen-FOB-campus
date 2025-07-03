@@ -23,9 +23,11 @@
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
+            {{-- Loop melalui variabel $payoutHistory yang sekarang berisi koleksi Payout --}}
             @forelse ($payoutHistory as $payout)
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{-- Karena kita sudah eager load, akses ini sekarang aman --}}
                         {{ $payout->investment->investor->user->name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -35,15 +37,16 @@
                         Rp {{ number_format($payout->investment->amount, 0, ',', '.') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                        Rp {{ number_format($payout->profit_amount, 0, ',', '.') }}
+                        {{-- PERBAIKAN: Menggunakan nama kolom 'amount' yang benar --}}
+                        Rp {{ number_format($payout->amount, 0, ',', '.') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ \Carbon\Carbon::parse($payout->payment_date)->isoFormat('D MMMM YYYY') }}
+                        {{-- PERBAIKAN: Menggunakan 'paid_at' dan properti Carbon langsung --}}
+                        {{ $payout->paid_at->isoFormat('D MMMM YYYY') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                        {{-- PERBAIKAN: Mengarahkan ke halaman detail payout --}}
                         <a href="{{ route('admin.payouts.show', $payout->id) }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Detail Payout
+                            Detail
                         </a>
                         <button 
                             type="button"
@@ -62,10 +65,11 @@
             @endforelse
         </tbody>
     </table>
+    
+    {{-- Menampilkan link paginasi --}}
     <div class="p-4 border-t">
         {{ $payoutHistory->links() }}
     </div>
 </div>
 
-<!-- Modal for Receipt. Pastikan Anda sudah memiliki file modal ini. -->
 @include('admin.payouts.partials.receipt-modal')

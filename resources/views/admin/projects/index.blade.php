@@ -59,24 +59,23 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress Pendanaan</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Progress Produksi</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              {{-- PERUBAHAN: Menambahkan kolom Deadline --}}
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
               <th class="relative px-6 py-3"><span class="sr-only">Aksi</span></th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             @forelse ($projects as $project)
               @php
-                // ====================================================================
-                // AWAL PERUBAHAN: Menggunakan data yang sudah dihitung di controller
-                // ====================================================================
                 $investedQty = $project->invested_qty ?? 0;
                 $fundingPercentage = $project->quantity > 0 ? round(($investedQty / $project->quantity) * 100) : 0;
                 
-                // Menggunakan alias baru dari controller
                 $completedQty = $project->production_accepted_qty ?? 0;
                 $productionPercentage = $investedQty > 0 ? round(($completedQty / $investedQty) * 100) : 0;
-                // ====================================================================
-                // AKHIR PERUBAHAN
-                // ====================================================================
+
+                // PERUBAHAN: Logika untuk menghitung sisa hari deadline
+                $deadline = \Carbon\Carbon::parse($project->deadline);
+                $daysRemaining = now()->startOfDay()->diffInDays($deadline, false);
               @endphp
 
               <tr>
@@ -109,7 +108,6 @@
 
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm text-gray-900">
-                    {{-- PERUBAHAN: Menampilkan data yang benar --}}
                     {{ $completedQty }} / {{ $investedQty }} pcs
                   </div>
                   <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
@@ -121,12 +119,35 @@
                   <span 
                     @class([
                       'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                      'bg-green-100 text-green-800' => $project->status == 'active',
-                      'bg-red-100 text-red-800' => $project->status != 'active',
+                      'bg-yellow-100 text-yellow-800' => $project->status == 'pending',
+                      'bg-blue-100 text-blue-800' => $project->status == 'funding',
+                      'bg-indigo-100 text-indigo-800' => $project->status == 'in_progress',
+                      'bg-green-100 text-green-800' => $project->status == 'completed',
                     ])
                   >
-                    {{ ucfirst($project->status) }}
+                    {{ ucfirst(str_replace('_', ' ', $project->status)) }}
                   </span>
+                </td>
+
+                {{-- PERUBAHAN: Menampilkan detail deadline dengan warna kondisional --}}
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <div class="font-medium 
+                        @if($project->status !== 'completed' && $daysRemaining < 0) text-red-600 
+                        @elseif($project->status !== 'completed' && $daysRemaining <= 7) text-yellow-600 
+                        @else text-gray-900 @endif">
+                        {{ $deadline->isoFormat('D MMM YYYY') }}
+                    </div>
+                    <div class="text-gray-500">
+                        @if($project->status == 'completed')
+                            Selesai
+                        @elseif($daysRemaining < 0)
+                            Terlambat {{ abs($daysRemaining) }} hari
+                        @elseif($daysRemaining == 0)
+                            Hari ini
+                        @else
+                            Sisa {{ $daysRemaining }} hari
+                        @endif
+                    </div>
                 </td>
 
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -141,7 +162,8 @@
               </tr>
             @empty
               <tr>
-                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                {{-- PERUBAHAN: Menyesuaikan colspan --}}
+                <td colspan="6" class="px-6 py-12 text-center text-gray-500">
                   Belum ada proyek yang dibuat. Silakan tambahkan proyek baru.
                 </td>
               </tr>
@@ -159,7 +181,7 @@
           <p class="mt-1 text-sm text-gray-600">Isi detail proyek untuk membuka pendanaan bagi investor.</p>
 
           <div class="mt-6 space-y-4">
-            <input type="hidden" name="status" value="active">
+            <input type="hidden" name="status" value="funding">
             <div>
               <x-input-label for="name" :value="__('Nama Proyek')" />
               <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required />
@@ -171,7 +193,7 @@
                 <x-input-error :messages="$errors->get('nominal_proyek')" class="mt-1" />
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div>
               <x-input-label for="quantity" :value="__('Total Kuantitas (pcs)')" />
               <x-text-input id="quantity" name="quantity" type="number" class="mt-1 block w-full" :value="old('quantity')" required />
@@ -183,7 +205,7 @@
               <x-input-error :messages="$errors->get('deadline')" class="mt-1" />
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <div>
               <x-input-label for="material_cost" :value="__('Biaya Bahan/pcs')" />
               <x-text-input id="material_cost" name="material_cost" type="number" step="50" class="mt-1 block w-full" :value="old('material_cost')" required />
