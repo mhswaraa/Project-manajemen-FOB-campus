@@ -3,64 +3,63 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\ProductionProgress;
-use App\Models\ProjectTailor;
-use App\Models\TailorProgress;
-use App\Models\Investment;
 
 class Project extends Model
 {
+    use HasFactory;
 
-    // Mass assignment
- protected $fillable = [
-    'name',
-    'nominal_proyek', // Pastikan ini ada
-    'price_per_piece',
-    'material_cost',
-    'quantity',
-    'profit',
-    'convection_profit',
-    'wage_per_piece',
-    'deadline',
-    'image',
-    'status',
-    'description',
-];
+    // --- AWAL PERUBAHAN: Menambahkan konstanta status ---
+    // Konstanta untuk alur kerja proyek
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+    public const STATUS_COMPLETED = 'completed';
+    public const STATUS_CANCELLED = 'cancelled';
+    
+    // Konstanta lama yang mungkin masih dipakai di beberapa controller
+    // Ini akan memetakan nilai lama ke nilai baru untuk konsistensi
+    public const STATUS_ACTIVE   = 'in_progress';
+    public const STATUS_INACTIVE = 'completed'; // Diubah sesuai permintaan
+    // --- AKHIR PERUBAHAN ---
 
-    // Casting untuk tipe numerik
-      protected $casts = [
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'image',
+        'description',
+        'nominal_proyek',
+        'quantity',
+        'deadline',
+        'price_per_piece',
+        'material_cost',
+        'wage_per_piece',
+        'profit',
+        'convection_profit',
+        'status',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
         'deadline' => 'datetime',
         'price_per_piece' => 'float',
-        'material_cost' => 'float', // <-- TAMBAHKAN INI
+        'material_cost' => 'float',
         'profit' => 'float',
         'convection_profit' => 'float',
         'wage_per_piece' => 'float',
         'nominal_proyek' => 'float'
     ];
-    // Constants untuk status
-    public const STATUS_ACTIVE   = 'active';
-    public const STATUS_INACTIVE = 'inactive';
 
     /**
-     * Relasi ke ProductionProgress (hasMany)
-     * → dipakai untuk progress internal proyek (bisa juga investasi langsung)
-     */
-    public function productionProgress()
-{
-    return $this->hasMany(ProductionProgress::class, 'project_id');
-}
-
-    /**
-     * Relasi assignments penjahit (ProjectTailor pivot)
-     */
-    public function assignments()
-    {
-        return $this->hasMany(ProjectTailor::class, 'project_id');
-    }
-
-    /**
-     * Relasi ke semua investasi (hasMany)
+     * Relasi ke semua investasi.
      */
     public function investments()
     {
@@ -68,7 +67,7 @@ class Project extends Model
     }
 
     /**
-     * Relasi ke INVESTASI yang sudah di-approve
+     * Relasi ke investasi yang sudah disetujui.
      */
     public function approvedInvestments()
     {
@@ -77,21 +76,25 @@ class Project extends Model
     }
 
     /**
-     * Alias relasi untuk kemudahan: memanggil produksi progress
-     * (investment → produksi nyata) via hasManyThrough
-     *
-     * Model akhir: TailorProgress
-     * Perantara : ProjectTailor (assignment)
+     * Relasi ke assignments penjahit (ProjectTailor).
      */
-     public function progress()
-{
-    return $this->hasManyThrough(
-        TailorProgress::class,    // model akhir
-        ProjectTailor::class,     // pivot assignment
-        'project_id',             // FK di project_tailor
-        'assignment_id',          // FK di tailor_progresses
-        'id',                     // PK project
-        'id'                      // PK project_tailor
-    );
-}
+    public function assignments()
+    {
+        return $this->hasMany(ProjectTailor::class, 'project_id');
+    }
+
+    /**
+     * Relasi untuk mendapatkan semua progress penjahit melalui assignments.
+     */
+    public function progress()
+    {
+        return $this->hasManyThrough(
+            TailorProgress::class,    // Model akhir yang ingin diakses
+            ProjectTailor::class,     // Model perantara
+            'project_id',             // Foreign key di tabel perantara (project_tailor)
+            'assignment_id',          // Foreign key di tabel akhir (tailor_progress)
+            'id',                     // Local key di tabel awal (projects)
+            'id'                      // Local key di tabel perantara (project_tailor)
+        );
+    }
 }

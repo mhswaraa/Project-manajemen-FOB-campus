@@ -32,20 +32,16 @@
                         Rp {{ number_format($investment->amount, 0, ',', '.') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
-                        Rp {{ number_format($investment->profit_to_be_paid, 0, ',', '.') }}
+                        Rp {{ number_format($investment->profit, 0, ',', '.') }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                         <a href="{{ route('admin.projects.show', $investment->project_id) }}" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             Detail
                         </a>
+                        {{-- PERUBAHAN: Menggunakan Js::from untuk mengirim seluruh objek investment --}}
                         <button 
                             type="button"
-                            @click="$dispatch('open-modal', { 
-                                name: 'payment-modal', 
-                                investmentId: {{ $investment->id }},
-                                profitAmount: '{{ number_format($investment->profit_to_be_paid, 0, ',', '.') }}',
-                                investorName: '{{ $investment->investor->user->name }}'
-                            })" 
+                            @click="selectedInvestment = {{ Js::from($investment) }}; paymentModalOpen = true"
                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                             Bayar
                         </button>

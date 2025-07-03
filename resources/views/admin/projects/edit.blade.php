@@ -28,10 +28,10 @@
                             <x-input-error :messages="$errors->get('name')" class="mt-2" />
                         </div>
                         <div>
-    <x-input-label for="nominal_proyek" :value="__('Nominal Proyek dari Buyer (Rp)')" />
-    <x-text-input id="nominal_proyek" name="nominal_proyek" type="number" step="1000" class="mt-1 block w-full" :value="old('nominal_proyek', $project->nominal_proyek)" required />
-    <x-input-error :messages="$errors->get('nominal_proyek')" class="mt-2" />
-</div>
+                            <x-input-label for="nominal_proyek" :value="__('Nominal Proyek dari Buyer (Rp)')" />
+                            <x-text-input id="nominal_proyek" name="nominal_proyek" type="number" step="1000" class="mt-1 block w-full" :value="old('nominal_proyek', $project->nominal_proyek)" required />
+                            <x-input-error :messages="$errors->get('nominal_proyek')" class="mt-2" />
+                        </div>
                         {{-- Kuantitas & Deadline --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
@@ -41,7 +41,6 @@
                             </div>
                             <div>
                                 <x-input-label for="deadline" :value="__('Deadline')" />
-                                {{-- FIX: Parse the deadline to ensure it's a Carbon object before formatting --}}
                                 <x-text-input id="deadline" name="deadline" type="date" class="mt-1 block w-full" :value="old('deadline', \Carbon\Carbon::parse($project->deadline)->format('Y-m-d'))" required />
                                 <x-input-error :messages="$errors->get('deadline')" class="mt-2" />
                             </div>
@@ -92,13 +91,20 @@
                                     </div>
                                 @endif
                             </div>
+                            
+                            {{-- AWAL PERUBAHAN: Dropdown Status Proyek diperbarui --}}
                             <div>
                                 <x-input-label for="status" :value="__('Status Proyek')" />
                                 <select name="status" id="status" class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                    <option value="active" @selected(old('status', $project->status) == 'active')>Aktif</option>
-                                    <option value="inactive" @selected(old('status', $project->status) == 'inactive')>Tidak Aktif</option>
+                                    <option value="pending" @selected(old('status', $project->status) == 'pending')>Pending</option>
+                                    <option value="in_progress" @selected(old('status', $project->status) == 'in_progress')>In Progress</option>
+                                    <option value="completed" @selected(old('status', $project->status) == 'completed')>Completed</option>
+                                    <option value="cancelled" @selected(old('status', $project->status) == 'cancelled')>Cancelled</option>
                                 </select>
+                                <p class="mt-1 text-xs text-gray-500">Ubah status alur kerja proyek. Mengubah ke "Completed" akan memicu proses pembayaran profit.</p>
+                                <x-input-error :messages="$errors->get('status')" class="mt-2" />
                             </div>
+                            {{-- AKHIR PERUBAHAN --}}
                         </div>
                         
                         {{-- Tombol Aksi --}}

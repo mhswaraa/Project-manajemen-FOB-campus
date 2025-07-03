@@ -16,7 +16,7 @@ class ProjectController extends Controller
     public function index(Request $request)
     {
         // 1. Mulai query untuk proyek yang aktif
-        $query = Project::where('status', 'active');
+        $query = Project::where('status', 'in_progress');
 
         // 2. Eager-load data agregat untuk performa
         $query->withSum(['investments as funded_qty' => function($q) {

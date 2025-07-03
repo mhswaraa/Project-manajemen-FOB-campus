@@ -9,6 +9,22 @@
         <p class="text-gray-500 mt-1">Pilih proyek yang ingin Anda kerjakan dari daftar di bawah ini.</p>
       </div>
 
+      {{-- AWAL: Blok untuk menampilkan notifikasi/alert --}}
+      @if (session('success'))
+          <div class="mb-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg" role="alert">
+              <p class="font-bold">Sukses</p>
+              <p>{{ session('success') }}</p>
+          </div>
+      @endif
+
+      @if (session('error'))
+          <div class="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert">
+              <p class="font-bold">Gagal</p>
+              <p>{{ session('error') }}</p>
+          </div>
+      @endif
+      {{-- AKHIR: Blok notifikasi --}}
+
       <div class="mb-6 p-4 bg-white rounded-lg shadow-sm">
         <div class="flex flex-col md:flex-row gap-4 items-center">
           <form action="{{ route('penjahit.projects.index') }}" method="GET" class="flex-grow w-full md:w-auto">

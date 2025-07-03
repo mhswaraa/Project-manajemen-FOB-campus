@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Project;
 use App\Models\Investor;
 use App\Models\ProductionProgress; // tambahkan import model ProductionProgress
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Investment extends Model
 {
@@ -29,6 +31,14 @@ class Investment extends Model
         'amount'   => 'decimal:2',
         'approved' => 'boolean',
     ];
+    // --- AWAL PERUBAHAN ---
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = ['profit'];
+    // --- AKHIR PERUBAHAN ---
 
     /**
      * Relasi ke Project.
@@ -46,9 +56,29 @@ class Investment extends Model
         return $this->belongsTo(Investor::class, 'investor_id');
     }
 
-     public function payout()
+     /**
+     * Relasi ke Payout.
+     */
+    public function payout()
     {
         return $this->hasOne(Payout::class);
+    }
+
+    /**
+     * Accessor untuk menghitung total profit investasi secara otomatis.
+     *
+     * @return \Illuminate\Database\Eloquent\Casts\Attribute
+     */
+    protected function profit(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->project && is_numeric($this->project->profit)) {
+                    return $this->qty * $this->project->profit;
+                }
+                return 0;
+            }
+        );
     }
 
     /**

@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Investment; // Pastikan ini di-import
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule; // <-- Import Rule untuk validasi status
 
 
 class ProjectController extends Controller
@@ -54,31 +55,34 @@ class ProjectController extends Controller
      * Simpan proyek baru.
      */
     public function store(Request $request)
-{
-    // =================== KEMBALIKAN KE 'image' ===================
-    $data = $request->validate([
-        'name'              => 'required|string|max:255',
-        'nominal_proyek'    => 'required|numeric|min:0',
-        'price_per_piece'   => 'required|numeric|min:0',
-        'material_cost'     => 'required|numeric|min:0',
-        'quantity'          => 'required|integer|min:1',
-        'profit'            => 'required|numeric|min:0',
-        'convection_profit' => 'required|numeric|min:0',
-        'wage_per_piece'    => 'required|numeric|min:0',
-        'deadline'          => 'required|date|after_or_equal:today',
-        'status'            => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
-        'image'             => 'nullable|image|max:2048', // DIKEMBALIKAN
-    ]);
+    {
+        // --- AWAL PERUBAHAN ---
+        // Menghapus validasi 'status' karena akan diatur otomatis
+        $data = $request->validate([
+            'name'                  => 'required|string|max:255',
+            'nominal_proyek'        => 'required|numeric|min:0',
+            'price_per_piece'       => 'required|numeric|min:0',
+            'material_cost'         => 'required|numeric|min:0',
+            'quantity'              => 'required|integer|min:1',
+            'profit'                => 'required|numeric|min:0',
+            'convection_profit'     => 'required|numeric|min:0',
+            'wage_per_piece'        => 'required|numeric|min:0',
+            'deadline'              => 'required|date|after_or_equal:today',
+            'image'                 => 'nullable|image|max:2048',
+        ]);
 
-    if ($request->hasFile('image')) { // DIKEMBALIKAN
-        $data['image'] = $request->file('image')->store('projects', 'public'); // DIKEMBALIKAN
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('projects', 'public');
+        }
+        
+        // Mengatur status default untuk setiap proyek baru menjadi 'pending'
+        $data['status'] = 'pending';
+
+        Project::create($data);
+        // --- AKHIR PERUBAHAN ---
+
+        return redirect()->route('admin.projects.index')->with('success', 'Proyek baru berhasil ditambahkan.');
     }
-    // =============================================================
-
-    Project::create($data);
-
-    return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil ditambahkan.');
-}
 
      public function edit(Project $project)
     {
@@ -114,33 +118,38 @@ class ProjectController extends Controller
         ));
     }
 
-    public function update(Request $request, Project $project)
-{
-    $data = $request->validate([
-        'name'              => 'required|string|max:255',
-        'nominal_proyek'    => 'required|numeric|min:0', // Pastikan ini ada
-        'price_per_piece'   => 'required|numeric|min:0',
-        'material_cost'     => 'required|numeric|min:0',
-        'quantity'          => 'required|integer|min:1',
-        'profit'            => 'required|numeric|min:0',
-        'convection_profit' => 'required|numeric|min:0',
-        'wage_per_piece'    => 'required|numeric|min:0',
-        'deadline'          => 'required|date',
-        'status'            => 'required|in:' . Project::STATUS_ACTIVE . ',' . Project::STATUS_INACTIVE,
-        'image'             => 'nullable|image|max:2048',
-    ]);
+     public function update(Request $request, Project $project)
+    {
+        // --- AWAL PERUBAHAN ---
+        // Menambahkan validasi untuk dropdown status baru
+        $data = $request->validate([
+            'name'                  => 'required|string|max:255',
+            'nominal_proyek'        => 'required|numeric|min:0',
+            'price_per_piece'       => 'required|numeric|min:0',
+            'material_cost'         => 'required|numeric|min:0',
+            'quantity'              => 'required|integer|min:1',
+            'profit'                => 'required|numeric|min:0',
+            'convection_profit'     => 'required|numeric|min:0',
+            'wage_per_piece'        => 'required|numeric|min:0',
+            'deadline'              => 'required|date',
+            'image'                 => 'nullable|image|max:2048',
+            // Validasi untuk status baru
+            'status'                => ['required', Rule::in(['pending', 'in_progress', 'completed', 'cancelled'])],
+        ]);
+        // --- AKHIR PERUBAHAN ---
 
-    if ($request->hasFile('image')) {
-        if ($project->image) {
-            Storage::disk('public')->delete($project->image);
+        if ($request->hasFile('image')) {
+            if ($project->image) {
+                Storage::disk('public')->delete($project->image);
+            }
+            $data['image'] = $request->file('image')->store('projects', 'public');
         }
-        $data['image'] = $request->file('image')->store('projects', 'public');
+
+        $project->update($data);
+
+        // Redirect ke halaman detail agar admin bisa melihat perubahan
+        return redirect()->route('admin.projects.show', $project)->with('success', 'Proyek berhasil diperbarui.');
     }
-
-    $project->update($data);
-
-    return redirect()->route('admin.projects.index')->with('success', 'Proyek berhasil diperbarui.');
-}
 
     public function destroy(Project $project)
 {
