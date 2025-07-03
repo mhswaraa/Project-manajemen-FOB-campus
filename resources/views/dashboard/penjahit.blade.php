@@ -12,15 +12,26 @@
         <p class="text-gray-500 mt-1">Selamat datang kembali, {{ Auth::user()->name }}!</p>
       </div>
 
+      {{-- ==================================================================== --}}
+      {{-- AWAL PERUBAHAN: Logika kalkulasi statistik disesuaikan --}}
+      {{-- ==================================================================== --}}
       @php
         // Menghitung statistik untuk kartu dari data $assignments
         $totalAssigned = $assignments->sum('assigned_qty');
+        
+        // Total Selesai sekarang dihitung dari item yang DITERIMA QC
         $totalDone = $assignments->reduce(function ($carry, $item) {
-            return $carry + $item->progress->sum('quantity_done');
+            return $carry + $item->progress->where('status', 'approved')->sum('accepted_qty');
         }, 0);
+        
         $activeTasksCount = $assignments->where('status', '!=', 'completed')->count();
+        
+        // Sisa pekerjaan dihitung dari Total Tugas dikurangi yang sudah DITERIMA QC
         $remainingWork = $totalAssigned - $totalDone;
       @endphp
+      {{-- ==================================================================== --}}
+      {{-- AKHIR PERUBAHAN --}}
+      {{-- ==================================================================== --}}
 
       {{-- 2. Kartu Statistik --}}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -46,7 +57,7 @@
 
         <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
           <div>
-            <p class="text-sm font-medium text-gray-500">Total Selesai</p>
+            <p class="text-sm font-medium text-gray-500">Total Diterima QC</p>
             <p class="text-3xl font-bold text-green-600">{{ $totalDone }} <span class="text-lg">pcs</span></p>
           </div>
           <div class="p-3 bg-green-100 rounded-full">
@@ -69,10 +80,12 @@
       <h2 class="text-xl font-semibold text-gray-700 mb-4">Rincian Tugas Anda</h2>
       <div class="space-y-4">
         @forelse($assignments as $task)
+          {{-- PERUBAHAN: Logika progres per kartu disesuaikan --}}
           @php
-            $done = $task->progress->sum('quantity_done');
             $assigned = $task->assigned_qty;
-            $percentage = $assigned > 0 ? round(($done / $assigned) * 100) : 0;
+            $accepted = $task->progress->where('status', 'approved')->sum('accepted_qty');
+            $pending = $task->progress->where('status', 'pending_qc')->sum('quantity_done');
+            $percentage = $assigned > 0 ? round(($accepted / $assigned) * 100) : 0;
           @endphp
           <div class="bg-white rounded-lg shadow p-5 transition hover:shadow-lg">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -80,7 +93,7 @@
                 <h3 class="text-lg font-bold text-gray-800">{{ $task->project->name }}</h3>
                 <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
                   {{ $task->status == 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                  Status: {{ ucfirst($task->status) }}
+                  Status: {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                 </span>
               </div>
               <a href="{{ route('penjahit.tasks.show', $task) }}"
@@ -90,14 +103,17 @@
             </div>
             <div class="mt-4">
               <div class="flex justify-between items-center mb-1 text-sm">
-                <span class="font-medium text-gray-600">Progress</span>
+                <span class="font-medium text-gray-600">Progress Diterima</span>
                 <span class="font-semibold text-teal-600">{{ $percentage }}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2.5">
                 <div class="bg-teal-500 h-2.5 rounded-full" style="width: {{ $percentage }}%"></div>
               </div>
-              <div class="text-right text-sm text-gray-500 mt-1">
-                {{ $done }} / {{ $assigned }} pcs
+              <div class="flex justify-between text-sm text-gray-500 mt-1">
+                <span>{{ $accepted }} / {{ $assigned }} pcs</span>
+                @if($pending > 0)
+                  <span class="text-yellow-600 italic">{{ $pending }} pcs menunggu QC</span>
+                @endif
               </div>
             </div>
           </div>

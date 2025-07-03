@@ -51,25 +51,26 @@
                   <div><p class="text-xs text-gray-500">Jumlah Slot</p><p class="font-bold text-gray-800">{{ $investment->qty }} pcs</p></div>
               </div>
 
-              {{-- Progress Bar Produksi --}}
+              {{-- ==================================================================== --}}
+              {{-- AWAL PERUBAHAN: Tampilan progres produksi disesuaikan --}}
+              {{-- ==================================================================== --}}
               @if($investment->approved)
-                @php
-                  // PERBAIKAN: Kalkulasi progres produksi dilakukan di sini
-                  $project = $investment->project;
-                  $totalProduction = $project->production_progresses_sum_quantity ?? 0;
-                  $projectQuantity = $project->qty;
-                  $progress = $projectQuantity > 0 ? round(($totalProduction / $projectQuantity) * 100) : 0;
-                @endphp
                 <div class="mt-4">
                   <div class="flex justify-between items-center mb-1 text-sm">
                     <span class="font-medium text-gray-600">Progres Produksi</span>
-                    <span class="font-semibold text-teal-600">{{ $progress }}%</span>
+                    <span class="font-semibold text-teal-600">{{ $investment->production_progress }}%</span>
                   </div>
                   <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-teal-500 h-2 rounded-full" style="width: {{ $progress }}%"></div>
+                    <div class="bg-teal-500 h-2 rounded-full" style="width: {{ $investment->production_progress }}%"></div>
                   </div>
+                  <p class="text-xs text-gray-500 text-right mt-1">
+                    {{ $investment->production_completed_qty }} / {{ $investment->production_target_qty }} pcs selesai
+                  </p>
                 </div>
               @endif
+              {{-- ==================================================================== --}}
+              {{-- AKHIR PERUBAHAN --}}
+              {{-- ==================================================================== --}}
 
               <div class="mt-5 pt-4 border-t border-gray-100 flex-grow flex items-end">
                   {{-- Tombol Aksi --}}

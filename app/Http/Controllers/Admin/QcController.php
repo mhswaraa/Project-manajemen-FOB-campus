@@ -63,6 +63,19 @@ class QcController extends Controller
             'qc_admin_id' => Auth::id(), // ID admin yang sedang login
         ]);
 
+        // ====================================================================
+        // AWAL PERUBAHAN: Logika untuk update status tugas utama
+        // ====================================================================
+        $assignment = $progress->assignment;
+        $totalAccepted = $assignment->progress()->where('status', 'approved')->sum('accepted_qty');
+
+        if ($totalAccepted >= $assignment->assigned_qty) {
+            $assignment->update(['status' => 'completed']);
+        }
+        // ====================================================================
+        // AKHIR PERUBAHAN
+        // ====================================================================
+
         // 4. Redirect kembali dengan pesan sukses.
         return redirect()->route('admin.qc.index')->with('success', 'Laporan progres berhasil diproses.');
     }

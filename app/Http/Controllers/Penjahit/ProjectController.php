@@ -78,56 +78,54 @@ class ProjectController extends Controller
      * Tampilkan sisa kuota sebelum ambil tugas.
      */
    public function create(Project $project)
-{
-    // Total pcs yang sudah di‑investasikan & approved oleh admin
-    $totalInvested = $project->investments()
-                             ->where('approved', true)
-                             ->sum('qty');
+    {
+        $totalInvested = $project->investments()
+                                  ->where('approved', true)
+                                  ->sum('qty');
 
-    // Total pcs yang sudah di‑ambil oleh penjahit (semua assignment)
-    $alreadyTaken = $project->assignments()
-                            ->sum('assigned_qty');
+        $alreadyTaken = $project->assignments()
+                                ->sum('assigned_qty');
 
-    // Sisa kuota yang benar
-    $remaining = max(0, $totalInvested - $alreadyTaken);
+        $remaining = max(0, $totalInvested - $alreadyTaken);
 
-    return view('penjahit.projects.take', compact(
-        'project',
-        'totalInvested',
-        'alreadyTaken',
-        'remaining'
-    ));
-}
+        return view('penjahit.projects.take', compact(
+            'project',
+            'totalInvested',
+            'alreadyTaken',
+            'remaining'
+        ));
+    }
 
-    /**
+     /**
      * Simpan assignment Penjahit ke proyek.
      */
     public function store(Request $request, Project $project)
     {
-        // Ambil tailor dari user yang sedang login
         $tailor = Auth::user()->tailor;
 
-        // =======================================================
-        // AWAL DARI KODE BARU: Pengecekan Duplikasi
-        // =======================================================
-        $existingAssignment = ProjectTailor::where('project_id', $project->id)
-                                             ->where('tailor_id', $tailor->tailor_id)
-                                             ->first();
+        // ====================================================================
+        // AWAL PERUBAHAN: Logika pengecekan duplikasi tugas
+        // ====================================================================
+        $activeAssignment = ProjectTailor::where('project_id', $project->id)
+                                           ->where('tailor_id', $tailor->tailor_id)
+                                           ->where('status', '!=', 'completed') // Cek apakah ada tugas yang BELUM selesai
+                                           ->first();
 
-        if ($existingAssignment) {
+        // Jika ditemukan tugas yang belum selesai, tolak permintaan.
+        if ($activeAssignment) {
             return back()
                 ->withInput()
-                ->with('error', 'Anda sudah mengambil proyek ini. Silakan kerjakan tugas yang ada di halaman "Tugas Saya".');
+                ->with('error', 'Anda masih memiliki tugas aktif untuk proyek ini. Selesaikan dan tunggu proses QC sebelum mengambil tugas baru.');
         }
-        // =======================================================
-        // AKHIR DARI KODE BARU
-        // =======================================================
+        // ====================================================================
+        // AKHIR PERUBAHAN
+        // ====================================================================
 
         $data = $request->validate([
             'qty' => 'required|integer|min:1',
         ]);
 
-        // Hitung sisa kuota dengan cara yang sama seperti di method create()
+        // Hitung sisa kuota yang tersedia
         $totalInvested = $project->investments()->where('approved', true)->sum('qty');
         $alreadyTaken = $project->assignments()->sum('assigned_qty');
         $availableQty = max(0, $totalInvested - $alreadyTaken);
@@ -140,17 +138,17 @@ class ProjectController extends Controller
                 ]);
         }
 
-        // Simpan assignment ke tabel project_tailors
+        // Simpan assignment baru ke tabel project_tailors
         ProjectTailor::create([
             'project_id'   => $project->id,
             'tailor_id'    => $tailor->tailor_id,
             'assigned_qty' => $data['qty'],
             'started_at'   => now(),
-            'status'       => 'in_progress',
+            'status'       => 'in_progress', // Status awal selalu 'in_progress'
         ]);
 
         return redirect()
             ->route('penjahit.tasks.index')
-            ->with('success', "Tugas berhasil diambil ({$data['qty']} pcs).");
+            ->with('success', "Tugas baru berhasil diambil ({$data['qty']} pcs).");
     }
 }

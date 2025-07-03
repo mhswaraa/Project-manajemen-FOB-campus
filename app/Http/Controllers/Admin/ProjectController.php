@@ -13,20 +13,30 @@ use Illuminate\Support\Facades\Auth;
 class ProjectController extends Controller
 {
     
-     public function index()
+       public function index()
     {
         // Ambil semua proyek dan eager-load data agregat untuk performa
         $projects = Project::withSum(['investments as invested_qty' => function($q) {
             $q->where('approved', true);
         }], 'qty')
-        ->withSum('progress as completed_qty', 'quantity_done')
+        ->withSum(['progress as production_accepted_qty' => function($q) {
+            // ====================================================================
+            // AWAL PERUBAHAN: Memberi tahu database untuk menggunakan kolom 'status' dari tabel 'tailor_progress'
+            // ====================================================================
+            $q->where('tailor_progress.status', 'approved');
+            // ====================================================================
+            // AKHIR PERUBAHAN
+            // ====================================================================
+        }], 'accepted_qty')
         ->latest() // Urutkan dari yang terbaru
         ->get();
 
         // Hitung statistik untuk kartu ringkasan
         $activeProjectsCount = $projects->where('status', 'active')->count();
+        // PERUBAHAN: Logika proyek selesai disesuaikan
         $completedProjectsCount = $projects->filter(function($p) {
-            return ($p->completed_qty ?? 0) >= $p->quantity;
+            // Sebuah proyek dianggap selesai jika jumlah yang diterima QC >= target kuantitas proyek
+            return ($p->production_accepted_qty ?? 0) >= $p->quantity;
         })->count();
         $fundingNeededCount = $projects->where('status', 'active')->filter(function($p) {
             return ($p->invested_qty ?? 0) < $p->quantity;

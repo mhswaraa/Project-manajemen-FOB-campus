@@ -14,6 +14,7 @@ class ProjectTailor extends Model
         'assigned_qty',
         'started_at',
         'status',
+        'completed_at', // <-- Tambahkan baris ini
     ];
 
     // Relasi ke Project

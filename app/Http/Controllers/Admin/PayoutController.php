@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PayoutController extends Controller
 {
@@ -20,38 +22,60 @@ class PayoutController extends Controller
      */
     public function index(Request $request)
     {
-        // Mengambil parameter 'tab' dari URL, defaultnya 'unpaid'
         $tab = $request->query('tab', 'unpaid');
-
-        // Langkah 1: Dapatkan ID proyek yang sudah selesai menggunakan query builder manual.
-        $completedProjectIds = DB::table('projects')
-            ->select('projects.id', 'projects.quantity')
-            ->leftJoin('project_tailor', 'projects.id', '=', 'project_tailor.project_id')
-            ->leftJoin('tailor_progress', 'project_tailor.id', '=', 'tailor_progress.assignment_id')
-            ->groupBy('projects.id', 'projects.quantity')
-            ->havingRaw('IFNULL(SUM(tailor_progress.quantity_done), 0) >= projects.quantity')
-            ->pluck('projects.id');
-
         
-        $payoutsReady = Investment::where('approved', 1)
-            ->where('profit_payout_status', 'unpaid')
-            ->whereIn('project_id', $completedProjectIds)
-            ->with('project.investor.user') // Cukup with('project.investor.user') karena project sudah termasuk
-            ->get();
+        $payoutsReady = collect();
+        $payoutHistory = collect();
 
-        // Langkah 1.5: Hitung profit untuk setiap investasi yang siap dibayar
-        foreach ($payoutsReady as $investment) {
-            $project = $investment->project;
-            if ($project) {
-                // Kalkulasi profit: (Harga * Kuantitas * %Profit Proyek) * %Ekuitas Investor
-                $investment->profit_to_be_paid = ($project->price * $project->quantity * ($project->profit / 100)) * ($investment->equity_percentage / 100);
-            } else {
-                $investment->profit_to_be_paid = 0;
+        if ($tab === 'unpaid') {
+            // ====================================================================
+            // AWAL PERUBAHAN: Logika disederhanakan untuk keandalan dan akurasi
+            // ====================================================================
+
+            // Langkah 1: Dapatkan ID semua proyek yang sudah selesai berdasarkan hasil QC.
+            $completedProjectIds = Project::query()
+                ->whereHas('progress', function ($query) {
+                    // Pastikan ada progress yang sudah di-approve
+                    $query->where('tailor_progress.status', 'approved');
+                })
+                ->withSum(['progress as total_accepted' => function ($query) {
+                    // Jumlahkan hanya yang sudah di-approve
+                    $query->where('tailor_progress.status', 'approved');
+                }], 'accepted_qty')
+                ->get()
+                ->filter(function ($project) {
+                    // Proyek dianggap selesai jika total yang diterima QC >= target kuantitas
+                    return ($project->total_accepted ?? 0) >= $project->quantity;
+                })
+                ->pluck('id');
+
+            // Langkah 2: Dapatkan semua investasi yang belum dibayar dari proyek-proyek yang sudah selesai.
+            if ($completedProjectIds->isNotEmpty()) {
+                $payoutsReady = Investment::where('approved', true)
+                    ->where('profit_payout_status', false) // Menggunakan boolean
+                    ->whereIn('project_id', $completedProjectIds)
+                    ->with(['investor.user', 'project'])
+                    ->get();
             }
+            
+            // Hitung profit untuk setiap investasi yang siap dibayar
+            foreach ($payoutsReady as $investment) {
+                $project = $investment->project;
+                if ($project) {
+                    // Logika profit konsisten: kuantitas slot * profit per piece
+                    $investment->profit_to_be_paid = $investment->qty * $project->profit;
+                } else {
+                    $investment->profit_to_be_paid = 0;
+                }
+            }
+            // ====================================================================
+            // AKHIR PERUBAHAN
+            // ====================================================================
+        } else {
+            $payoutHistory = Payout::with(['investment.project', 'investment.investor.user', 'processor'])
+                ->latest('payment_date')
+                ->paginate(10);
         }
-
-        // Menggunakan paginate() agar bisa menggunakan links() di view.
-        $payoutHistory = Payout::with('investment.project', 'investment.investor.user')->latest()->paginate(10)->withQueryString();
 
         return view('admin.payouts.index', compact('payoutsReady', 'payoutHistory', 'tab'));
     }
@@ -66,32 +90,32 @@ class PayoutController extends Controller
     {
         $request->validate([
             'investment_id' => 'required|exists:investments,id',
-            'receipt' => 'required|file|mimes:pdf,jpg,png|max:2048',
+            'receipt' => 'required|file|mimes:pdf,jpg,png,jpeg|max:2048',
         ]);
 
         try {
             $investment = Investment::findOrFail($request->investment_id);
             $project = $investment->project;
 
-            // Menghitung total profit untuk investor
-            $totalProfit = ($project->price * $project->quantity * ($project->profit / 100)) * ($investment->equity_percentage / 100);
+            // Perhitungan profit yang konsisten
+            $totalProfit = $investment->qty * $project->profit;
 
             // Simpan file bukti pembayaran
-            $receiptPath = $request->file('receipt')->store('receipts', 'public');
+            $receiptPath = $request->file('receipt')->store('payout_receipts', 'public');
 
             // Buat record payout baru
-            $payout = Payout::create([
+            Payout::create([
                 'investment_id' => $investment->id,
                 'amount' => $totalProfit,
-                'status' => 'paid',
-                'receipt' => $receiptPath,
-                'paid_at' => now(),
+                'payment_date' => now(),
+                'receipt_path' => $receiptPath,
+                'processed_by' => Auth::id(),
             ]);
 
-            // Update status profit payout di investment
-            $investment->update(['profit_payout_status' => 'paid']);
+            // Update status profit payout di investment menjadi true
+            $investment->update(['profit_payout_status' => true]);
 
-            return redirect()->route('admin.payouts.index')->with('success', 'Payout berhasil diproses.');
+            return redirect()->route('admin.payouts.index', ['tab' => 'history'])->with('success', 'Payout berhasil diproses.');
         } catch (\Exception $e) {
             Log::error('Error processing payout: ' . $e->getMessage());
             return back()->with('error', 'Terjadi kesalahan saat memproses payout.');
@@ -106,18 +130,21 @@ class PayoutController extends Controller
      */
     public function show(Payout $payout)
     {
+        $payout->load(['investment.project', 'investment.investor.user', 'processor']);
         return view('admin.payouts.show', compact('payout'));
     }
 
     /**
-     * Mengunduh bukti pembayaran dalam format PDF.
+     * Mengunduh bukti pembayaran.
      *
      * @param  \App\Models\Payout  $payout
      * @return \Illuminate\Http\Response
      */
     public function downloadReceipt(Payout $payout)
     {
-        $pdf = Pdf::loadView('admin.payouts.pdf', compact('payout'));
-        return $pdf->download('receipt-payout-' . $payout->id . '.pdf');
+        if (!Storage::disk('public')->exists($payout->receipt_path)) {
+            abort(404, 'File bukti pembayaran tidak ditemukan.');
+        }
+        return Storage::disk('public')->download($payout->receipt_path);
     }
 }
